@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8" />
+    <title>پلن‌های اشتراک | {{ app_name }}</title>
+    <style>
+        body {
+            font-family: Tahoma, sans-serif;
+            background: #f0f0f7;
+            direction: rtl;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            color: #5a2a83;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .plans-container {
+            max-width: 600px;
+            margin: auto;
+            display: flex;
+            justify-content: space-around;
+            gap: 20px;
+        }
+        .plan-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 4px 10px rgba(90, 42, 131, 0.2);
+            width: 180px;
+            text-align: center;
+        }
+        .plan-title {
+            font-weight: bold;
+            font-size: 1.4em;
+            margin-bottom: 15px;
+            color: #5a2a83;
+        }
+        .plan-price {
+            font-size: 1.2em;
+            margin-bottom: 20px;
+            color: #8237b5;
+        }
+        .buy-btn {
+            background: #5a2a83;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 40px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s ease;
+        }
+        .buy-btn:hover {
+            background: #7a44a1;
+        }
+    </style>
+</head>
+<body>
+    <h1>پلن‌های اشتراک</h1>
+    <div class="plans-container">
+        <div class="plan-card">
+            <div class="plan-title">یک ماهه</div>
+            <div class="plan-price">۱۰ دلار</div>
+            <button class="buy-btn" onclick="alert('پرداخت ماهانه (نمونه)')">خرید</button>
+        </div>
+        <div class="plan-card">
+            <div class="plan-title">سه ماهه</div>
+            <div class="plan-price">۲۵ دلار</div>
+            <button class="buy-btn" onclick="alert('پرداخت سه ماهه (نمونه)')">خرید</button>
+        </div>
+        <div class="plan-card">
+            <div class="plan-title">یک ساله</div>
+            <div class="plan-price">۹۰ دلار</div>
+            <button class="buy-btn" onclick="alert('پرداخت سالانه (نمونه)')">خرید</button>
+        </div>
+    </div>
+</body>
+</html>
