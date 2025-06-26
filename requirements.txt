@@ -1,5 +1,4 @@
 Flask==3.0.2
 flask-dance==7.0.0
+edge-tts
 paypalrestsdk==1.13.3
-edge-tts==1.2.0
-requests==2.31.0
