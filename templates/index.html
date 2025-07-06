@@ -2,120 +2,111 @@
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>Voxir | داشبورد</title>
+    <title>صفحه اصلی | Voxir</title>
     <style>
         body {
             background-color: #121212;
             color: white;
             font-family: Tahoma, sans-serif;
             padding: 30px;
+            margin: 0;
         }
         h1 {
-            text-align: center;
             color: #00bcd4;
         }
-        .language-select, .plan-list, .upload-box {
-            background-color: #1e1e1e;
-            padding: 20px;
-            border-radius: 15px;
-            margin-bottom: 30px;
+        label, select, textarea, button {
+            font-family: Tahoma;
+            font-size: 1em;
         }
-        select, textarea, button {
+        textarea {
             width: 100%;
-            margin-top: 10px;
-            padding: 10px;
-            border: none;
-            border-radius: 8px;
-            background-color: #333;
+            height: 100px;
+            margin-bottom: 20px;
+            background-color: #1e1e1e;
             color: white;
+            border: 1px solid #444;
+            border-radius: 6px;
+            padding: 10px;
         }
-        button {
+        select, button {
             background-color: #00bcd4;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            margin-top: 10px;
+            border-radius: 6px;
             cursor: pointer;
-            transition: background 0.3s;
         }
         button:hover {
             background-color: #0097a7;
         }
-        .plans {
-            display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
-        }
-        .plan {
-            background-color: #272727;
-            border: 1px solid #444;
-            border-radius: 10px;
-            padding: 15px;
-            flex: 1 1 200px;
-        }
-        .plan h3 {
-            color: #03a9f4;
+        #downloadBtn img {
+            vertical-align: middle;
         }
     </style>
 </head>
 <body>
-    <h1>خوش آمدید، {{ email }}</h1>
+    <h1>تبدیل متن به صدا</h1>
 
-    <div class="language-select">
-        <h2>انتخاب زبان</h2>
-        <form id="tts-form">
-            <select name="voice">
-                {% for name, code in languages.items() %}
-                    <option value="{{ code }}">{{ name }}</option>
-                {% endfor %}
-            </select>
-            <textarea name="text" placeholder="متن خود را اینجا وارد کنید"></textarea>
-            <button type="submit">تبدیل به صدا</button>
-        </form>
-    </div>
+    <form id="ttsForm">
+        <label for="language">زبان:</label>
+        <select id="language" name="language">
+            <option value="fa-IR-DilaraNeural">فارسی</option>
+            <option value="en-US-AriaNeural">انگلیسی</option>
+            <option value="de-DE-KatjaNeural">آلمانی</option>
+            <option value="fr-FR-DeniseNeural">فرانسوی</option>
+            <option value="es-ES-ElviraNeural">اسپانیایی</option>
+        </select>
 
-    <div class="plan-list">
-        <h2>پلن‌ها</h2>
-        <form method="POST" action="/create_payment">
-            <div class="plans">
-                {% for plan in plans %}
-                    <div class="plan">
-                        <h3>{{ plan.name }}</h3>
-                        <p>قیمت: {{ plan.price }}</p>
-                        <ul>
-                            {% for feature in plan.features %}
-                                <li>{{ feature }}</li>
-                            {% endfor %}
-                        </ul>
-                        <button name="plan_id" value="{{ plan.id }}">انتخاب</button>
-                    </div>
-                {% endfor %}
-            </div>
-        </form>
-    </div>
+        <br><br>
+        <label for="text">متن:</label>
+        <textarea id="text" name="text" placeholder="متن مورد نظر خود را اینجا بنویسید..."></textarea>
 
-    <div class="upload-box">
-        <h2>دانلود فایل تولیدشده</h2>
-        <a href="/download" style="color:#03a9f4">دانلود خروجی صوتی</a>
+        <button type="button" onclick="submitTTS()">تبدیل به صدا</button>
+    </form>
+
+    <div id="result" style="margin-top: 30px;">
+        <audio id="audioPlayer" controls style="display:none; margin-top: 20px;">
+            <source src="/audio/output.mp3" type="audio/mpeg">
+            مرورگر شما از پخش صدا پشتیبانی نمی‌کند.
+        </audio>
+
+        <a id="downloadBtn" href="/download" style="display:none; margin-top: 10px; display: inline-block;">
+            <img src="https://cdn-icons-png.flaticon.com/512/109/109602.png" alt="دانلود" width="40">
+        </a>
     </div>
 
     <script>
-        document.getElementById('tts-form').addEventListener('submit', async function(event) {
-            event.preventDefault();
-            const form = event.target;
-            const voice = form.voice.value;
-            const text = form.text.value;
+        function submitTTS() {
+            const text = document.getElementById("text").value;
+            const voice = document.getElementById("language").value;
 
-            const res = await fetch('/tts', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
+            fetch("/tts", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
                 body: JSON.stringify({ text, voice })
-            });
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.audio_url) {
+                    handleTTSResponse();
+                } else {
+                    alert("خطا: " + data.error);
+                }
+            })
+            .catch(err => alert("مشکلی رخ داد: " + err));
+        }
 
-            const data = await res.json();
-            if (data.audio_url) {
-                const audio = new Audio(data.audio_url);
-                audio.play();
-            } else {
-                alert('خطا در تولید صدا');
-            }
-        });
+        function handleTTSResponse() {
+            const audio = document.getElementById("audioPlayer");
+            const download = document.getElementById("downloadBtn");
+            audio.src = "/audio/output.mp3?" + new Date().getTime();
+            audio.style.display = "block";
+            audio.load();
+            download.style.display = "inline-block";
+        }
     </script>
 </body>
 </html>
