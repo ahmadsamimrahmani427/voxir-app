@@ -96,7 +96,7 @@ def create_payment():
     if plan_id == "free":
         return redirect(url_for("app_main"))
 
-    # قیمت پلن حرفه‌ای: 3 دلار
+    # قیمت پلن حرفه‌ای (تغییر یافته به ۳ دلار)
     amount = "3.00"
 
     payment = paypalrestsdk.Payment({
