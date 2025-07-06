@@ -51,14 +51,16 @@ def login():
         password = request.form.get("password")
         if email and password:
             session["email"] = email
-            session["free_uses"] = 0  # شمارنده استفاده رایگان را صفر کن
+            # مقدار اولیه تعداد استفاده رایگان را ست می‌کنیم
+            session["free_uses"] = 0
             return redirect(url_for("app_main"))
 
     if google.authorized:
         resp = google.get("/oauth2/v2/userinfo")
         if resp.ok:
             session["email"] = resp.json().get("email")
-            session["free_uses"] = 0  # شمارنده استفاده رایگان را صفر کن
+            # مقدار اولیه تعداد استفاده رایگان را ست می‌کنیم
+            session["free_uses"] = 0
             return redirect(url_for("app_main"))
 
     return render_template("login.html")
@@ -74,6 +76,7 @@ def app_main():
         return redirect(url_for("login"))
     email = session.get("email", "کاربر")
     free_uses = session.get("free_uses", 0)
+    free_uses_left = max(3 - free_uses, 0)
     plans = [
         {"name": "پلن رایگان", "price": "رایگان", "features": ["۳ استفاده رایگان"], "id": "free"},
         {"name": "پلن ۳ ماهه حرفه‌ای", "price": "۳ دلار", "features": ["استفاده نامحدود", "پشتیبانی ویژه"], "id": "pro"},
@@ -83,6 +86,7 @@ def app_main():
         email=email,
         languages=LANGUAGES,
         free_uses=free_uses,
+        free_uses_left=free_uses_left,
         plans=plans
     )
 
@@ -96,8 +100,15 @@ def create_payment():
         return "پلن نامعتبر است", 400
 
     if plan_id == "free":
-        return redirect(url_for("app_main"))
+        # اگر استفاده رایگان به پایان رسیده بود اجازه ندهیم
+        free_uses = session.get("free_uses", 0)
+        if free_uses >= 3:
+            return "تعداد استفاده رایگان شما به پایان رسیده است. لطفا پلن حرفه‌ای را خریداری کنید.", 403
+        else:
+            session["free_uses"] = free_uses + 1
+            return redirect(url_for("app_main"))
 
+    # پلن حرفه‌ای (۳ دلار)
     amount = "3.00"
 
     payment = paypalrestsdk.Payment({
@@ -143,8 +154,8 @@ def payment_execute():
     payment = paypalrestsdk.Payment.find(payment_id)
 
     if payment.execute({"payer_id": payer_id}):
-        # پس از پرداخت موفق، تعداد استفاده رایگان را حذف یا ریست کن
-        session["free_uses"] = 0
+        # پرداخت موفق: در اینجا می‌توانید وضعیت خرید پلن را ذخیره کنید
+        session["free_uses"] = 0  # برای مثال ریست کردن استفاده رایگان
         return "پرداخت با موفقیت انجام شد. متشکریم!"
     else:
         return f"خطا در تایید پرداخت: {payment.error}", 400
@@ -157,10 +168,6 @@ def payment_cancel():
 def tts():
     if not is_logged_in():
         return {"error": "لطفا وارد شوید."}, 403
-
-    free_uses = session.get("free_uses", 0)
-    if free_uses >= 3:
-        return {"error": "تعداد استفاده رایگان شما به پایان رسیده است. لطفا پلن خود را ارتقا دهید."}, 403
 
     data = request.get_json()
     text = data.get('text', '')
@@ -178,9 +185,6 @@ def tts():
         await communicate.save(output_path)
 
     asyncio.run(synthesize())
-
-    session["free_uses"] = free_uses + 1
-
     return {"audio_url": "/audio/output.mp3"}
 
 @app.route('/audio/<path:filename>')
