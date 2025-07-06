@@ -51,12 +51,17 @@ def login():
         password = request.form.get("password")
         if email and password:
             session["email"] = email
+            # مقداردهی اولیه تعداد استفاده رایگان
+            session.setdefault("free_uses", 3)
+            session["paid"] = False
             return redirect(url_for("app_main"))
 
     if google.authorized:
         resp = google.get("/oauth2/v2/userinfo")
         if resp.ok:
             session["email"] = resp.json().get("email")
+            session.setdefault("free_uses", 3)
+            session["paid"] = False
             return redirect(url_for("app_main"))
 
     return render_template("login.html")
@@ -71,7 +76,7 @@ def app_main():
     if not is_logged_in():
         return redirect(url_for("login"))
     email = session.get("email", "کاربر")
-    free_uses = session.get("free_uses", 3)  # 3 استفاده رایگان برای پلن رایگان
+    free_uses = session.get("free_uses", 3)
     plans = [
         {"name": "پلن رایگان", "price": "رایگان", "features": ["۳ استفاده رایگان"], "id": "free"},
         {"name": "پلن ۳ ماهه حرفه‌ای", "price": "۳ دلار", "features": ["استفاده نامحدود", "پشتیبانی ویژه"], "id": "pro"},
@@ -94,7 +99,6 @@ def create_payment():
         return "پلن نامعتبر است", 400
 
     if plan_id == "free":
-        # وقتی پلن رایگان انتخاب می‌شود: اگر استفاده رایگان باقی دارد اجازه دهد
         free_uses = session.get("free_uses", 3)
         if free_uses > 0:
             session["free_uses"] = free_uses - 1
@@ -102,14 +106,11 @@ def create_payment():
         else:
             return "استفاده رایگان شما به پایان رسیده است. لطفاً پلن حرفه‌ای را خریداری کنید.", 403
 
-    # قیمت پلن حرفه‌ای (۳ دلار)
-    amount = "3.00"
+    amount = "3.00"  # قیمت ۳ دلار
 
     payment = paypalrestsdk.Payment({
         "intent": "sale",
-        "payer": {
-            "payment_method": "paypal"
-        },
+        "payer": {"payment_method": "paypal"},
         "redirect_urls": {
             "return_url": url_for('payment_execute', _external=True),
             "cancel_url": url_for('payment_cancel', _external=True)
@@ -124,10 +125,7 @@ def create_payment():
                     "quantity": 1
                 }]
             },
-            "amount": {
-                "total": amount,
-                "currency": "USD"
-            },
+            "amount": {"total": amount, "currency": "USD"},
             "description": "خرید پلن ۳ ماهه حرفه‌ای"
         }]
     })
@@ -148,7 +146,6 @@ def payment_execute():
     payment = paypalrestsdk.Payment.find(payment_id)
 
     if payment.execute({"payer_id": payer_id}):
-        # در صورت موفقیت پرداخت، می‌توان وضعیت پلن را در session یا دیتابیس ذخیره کرد
         session["paid"] = True
         return "پرداخت با موفقیت انجام شد. متشکریم!"
     else:
@@ -170,7 +167,6 @@ def tts():
     if not text.strip():
         return jsonify({"error": "متن خالی است."}), 400
 
-    # اگر پلن رایگان است و استفاده مجاز نیست، رد کند
     free_uses = session.get("free_uses", 3)
     paid = session.get("paid", False)
 
@@ -187,7 +183,6 @@ def tts():
 
     asyncio.run(synthesize())
 
-    # اگر پلن رایگان است، یک استفاده کم می‌کند
     if not paid:
         session["free_uses"] = free_uses - 1
 
