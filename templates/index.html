@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="فا">
+<html lang="fa">
 <head>
     <meta charset="UTF-8" />
     <title>داشبورد Voxir</title>
@@ -7,12 +7,12 @@
         @import url('https://fonts.googleapis.com/css2?family=Vazirmatn&display=swap');
         body {
             font-family: 'Vazirmatn', Tahoma, sans-serif;
-            background: #121212;
+            background: #121212; /* پس‌زمینه مشکی */
             margin: 0; padding: 0; min-height: 100vh; color: #fff;
             display: flex; flex-direction: column;
         }
         header {
-            background: #1f1f1f;
+            background: #1f1f1f; /* هدر تیره */
             padding: 20px;
             display: flex; justify-content: space-between; align-items: center;
             box-shadow: 0 2px 8px rgba(0,0,0,0.8);
@@ -20,7 +20,7 @@
         header .logo {
             font-size: 1.8em; font-weight: bold;
             letter-spacing: 2px;
-            color: #3399ff;
+            color: #3399ff; /* آبی */
         }
         header a.logout {
             color: #3399ff;
@@ -225,7 +225,7 @@
     </header>
     <main>
         <div class="user-info">
-            خوش آمدید، {{ email }}! &nbsp;&nbsp; <strong>تعداد استفاده رایگان باقی‌مانده:</strong> {{ free_uses_left }}
+            خوش آمدید، {{ email }}! &nbsp;&nbsp; <strong>تعداد استفاده رایگان باقی‌مانده:</strong> {{ 3 - free_uses }}
         </div>
 
         <div class="plans">
