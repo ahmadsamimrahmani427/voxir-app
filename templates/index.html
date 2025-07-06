@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fa">
+<html lang="فا">
 <head>
     <meta charset="UTF-8" />
     <title>داشبورد Voxir</title>
@@ -7,12 +7,12 @@
         @import url('https://fonts.googleapis.com/css2?family=Vazirmatn&display=swap');
         body {
             font-family: 'Vazirmatn', Tahoma, sans-serif;
-            background: #121212;
+            background: #121212; /* پس‌زمینه مشکی */
             margin: 0; padding: 0; min-height: 100vh; color: #fff;
             display: flex; flex-direction: column;
         }
         header {
-            background: #1f1f1f;
+            background: #1f1f1f; /* هدر تیره */
             padding: 20px;
             display: flex; justify-content: space-between; align-items: center;
             box-shadow: 0 2px 8px rgba(0,0,0,0.8);
@@ -20,7 +20,7 @@
         header .logo {
             font-size: 1.8em; font-weight: bold;
             letter-spacing: 2px;
-            color: #3399ff;
+            color: #3399ff; /* آبی */
         }
         header a.logout {
             color: #3399ff;
@@ -49,6 +49,7 @@
             margin-bottom: 25px;
             text-align: center;
             font-weight: 600;
+            letter-spacing: 0.5px;
             color: #e0e0e0;
         }
         .plans {
@@ -73,20 +74,24 @@
             transform: translateY(-8px);
         }
         .plan h3 {
+            margin-top: 0;
             color: #3399ff;
+            font-weight: 700;
             font-size: 1.5em;
+            margin-bottom: 10px;
         }
         .plan .price {
             font-size: 1.7em;
             font-weight: bold;
-            color: #66b3ff;
             margin: 15px 0;
+            color: #66b3ff;
         }
         .plan ul {
             list-style: none;
-            padding: 0;
+            padding-left: 0;
+            margin: 0 0 15px 0;
         }
-        .plan li {
+        .plan ul li {
             margin-bottom: 10px;
             font-weight: 600;
         }
@@ -112,8 +117,11 @@
             padding: 25px;
             border-radius: 20px;
             box-shadow: 0 2px 18px rgba(0,0,0,0.9);
+            max-width: 100%;
         }
         .tts-section h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
             text-align: center;
             font-weight: 700;
             color: #3399ff;
@@ -127,6 +135,7 @@
             border: none;
             resize: vertical;
             outline: none;
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
             background-color: #333;
             color: #fff;
         }
@@ -146,6 +155,7 @@
             max-width: 300px;
             display: block;
             margin: 15px auto 0;
+            text-align: center;
         }
         .tts-section button {
             background-color: #3399ff;
@@ -166,8 +176,10 @@
         .audio-player audio {
             width: 100%;
             max-width: 400px;
+            outline: none;
             border-radius: 12px;
             box-shadow: 0 2px 12px rgba(0,0,0,0.9);
+            background-color: #000;
         }
         .audio-player button {
             margin-top: 10px;
@@ -188,6 +200,21 @@
             font-weight: 600;
             margin-top: 15px;
             text-align: center;
+        }
+        @media (max-width: 600px) {
+            .plans {
+                flex-direction: column;
+                align-items: center;
+            }
+            .plan {
+                max-width: 100%;
+            }
+            .tts-section select, .tts-section button {
+                max-width: 100%;
+            }
+            .audio-player audio {
+                max-width: 100%;
+            }
         }
     </style>
 </head>
@@ -222,11 +249,13 @@
         <div class="tts-section">
             <h3>تبدیل متن به صدا</h3>
             <textarea id="text-input" placeholder="متن خود را اینجا وارد کنید..."></textarea>
+            <br />
             <select id="voice-select">
                 {% for lang, voice in languages.items() %}
                 <option value="{{ voice }}">{{ lang }}</option>
                 {% endfor %}
             </select>
+            <br />
             <button onclick="convertTextToSpeech()">تبدیل به صدا</button>
 
             <div class="audio-player" id="audio-player" style="display:none;">
@@ -275,7 +304,10 @@
         }
 
         function downloadAudio() {
-            window.location.href = '/download';
+            const audioElem = document.getElementById('audio');
+            if (audioElem.src) {
+                window.location.href = '/download';
+            }
         }
     </script>
 </body>
