@@ -2,69 +2,69 @@
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8" />
-    <title>ورود به حساب</title>
+    <title>ورود</title>
     <style>
         body {
             background-color: #121212;
-            color: #eee;
+            color: #e0e0e0;
             font-family: Tahoma, sans-serif;
-            margin: 0; padding: 0;
-            display: flex; justify-content: center; align-items: center;
-            height: 100vh;
-        }
-        .login-container {
-            background: #1e1e1e;
-            padding: 40px 50px;
-            border-radius: 15px;
-            box-shadow: 0 0 10px #3da6ff;
-            width: 320px;
+            margin: 0;
+            padding: 40px;
+            direction: rtl;
             text-align: center;
         }
+        form {
+            background-color: #222;
+            display: inline-block;
+            padding: 25px 30px;
+            border-radius: 15px;
+            box-shadow: 0 0 10px #2196f3;
+            max-width: 320px;
+            width: 100%;
+        }
         h2 {
-            margin-bottom: 30px;
-            color: #3da6ff;
+            margin-bottom: 25px;
+            color: #2196f3;
         }
         input[type="email"], input[type="password"] {
             width: 100%;
-            padding: 12px 15px;
-            margin-bottom: 20px;
+            padding: 12px 10px;
+            margin: 10px 0 20px 0;
             border: none;
             border-radius: 8px;
             font-size: 1em;
         }
         button {
-            background-color: #3da6ff;
+            background-color: #2196f3;
             color: white;
             border: none;
-            padding: 14px 0;
+            padding: 12px;
             width: 100%;
-            font-size: 1em;
-            font-weight: bold;
             border-radius: 40px;
+            font-weight: bold;
+            font-size: 1.1em;
             cursor: pointer;
             transition: background-color 0.3s ease;
         }
         button:hover {
-            background-color: #61b4ff;
+            background-color: #1976d2;
         }
         .google-login {
-            margin-top: 20px;
-            color: #3da6ff;
-            text-decoration: underline;
+            margin-top: 15px;
+            color: #2196f3;
             cursor: pointer;
-            display: block;
+            text-decoration: underline;
         }
     </style>
 </head>
 <body>
-    <div class="login-container">
-        <h2>ورود به حساب</h2>
-        <form method="POST">
-            <input type="email" name="email" placeholder="ایمیل" required />
-            <input type="password" name="password" placeholder="رمز عبور" required />
-            <button type="submit">ورود</button>
-        </form>
-        <a href="{{ url_for('google.login') }}" class="google-login">ورود با گوگل</a>
-    </div>
+    <form method="POST">
+        <h2>ورود به حساب کاربری</h2>
+        <input type="email" name="email" placeholder="ایمیل" required />
+        <input type="password" name="password" placeholder="رمز عبور" required />
+        <button type="submit">ورود</button>
+        <p>یا</p>
+        <a class="google-login" href="{{ url_for('google.login') }}">ورود با گوگل</a>
+    </form>
 </body>
 </html>
