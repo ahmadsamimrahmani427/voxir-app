@@ -4,20 +4,20 @@ import paypalrestsdk
 app = Flask(__name__)
 app.secret_key = "your-secret-key"
 
-# پیکربندی پی‌پال (Sandbox یا Live)
+# پیکربندی پی‌پال (حالت sandbox برای تست)
 paypalrestsdk.configure({
-    "mode": "sandbox",  # یا "live"
-    "client_id": "اینجا Client ID را وارد کن",
-    "client_secret": "اینجا Client Secret را وارد کن"
+    "mode": "sandbox",  # اگر آماده انتشار هستی "live" بگذار
+    "client_id": "اینجا Client ID پی‌پال خودت را قرار بده",
+    "client_secret": "اینجا Client Secret پی‌پال خودت را قرار بده"
 })
 
 @app.route('/')
 def index():
-    return render_template("index.html")  # صفحه‌ای که دکمه خرید دارد
+    return render_template("index.html")  # صفحه اصلی با دکمه خرید
 
 @app.route('/create_payment', methods=['POST'])
 def create_payment():
-    amount = "3.00"  # قیمت پلن به دلار
+    amount = "3.00"  # مبلغ پرداخت
 
     payment = paypalrestsdk.Payment({
         "intent": "sale",
