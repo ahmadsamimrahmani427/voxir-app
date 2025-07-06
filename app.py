@@ -5,18 +5,31 @@ import edge_tts
 import asyncio
 
 app = Flask(__name__)
-app.secret_key = "your-secret-key"  # کلید امن خودت را قرار بده
+app.secret_key = "your-secret-key"
 
-# پیکربندی پی‌پال (Sandbox یا Live)
+# تنظیمات پی‌پال (Sandbox)
 paypalrestsdk.configure({
-    "mode": "sandbox",  # یا "live"
-    "client_id": "اینجا Client ID پی‌پال خودت را قرار بده",
-    "client_secret": "اینجا Client Secret پی‌پال خودت را قرار بده"
+    "mode": "sandbox",
+    "client_id": "اینجا Client ID تو",
+    "client_secret": "اینجا Client Secret تو"
 })
 
-# شبیه‌سازی ورود کاربر (برای نمونه)
+LANGUAGES = {
+    "فارسی": "fa-IR-DilaraNeural",
+    "انگلیسی": "en-US-AriaNeural",
+    "آلمانی": "de-DE-KatjaNeural",
+    "فرانسوی": "fr-FR-DeniseNeural",
+    "اسپانیایی": "es-ES-ElviraNeural"
+}
+
 def is_logged_in():
     return "email" in session
+
+@app.route('/')
+def welcome():
+    if not is_logged_in():
+        return redirect(url_for('login'))
+    return redirect(url_for('app_main'))
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -28,7 +41,7 @@ def login():
             return redirect(url_for('app_main'))
     return '''
     <form method="POST">
-        ایمیل: <input name="email" type="email" required>
+        <input name="email" type="email" placeholder="ایمیل" required>
         <button type="submit">ورود</button>
     </form>
     '''
@@ -37,12 +50,6 @@ def login():
 def logout():
     session.clear()
     return redirect(url_for('login'))
-
-@app.route('/')
-def welcome():
-    if not is_logged_in():
-        return redirect(url_for('login'))
-    return redirect(url_for('app_main'))
 
 @app.route('/app')
 def app_main():
@@ -54,23 +61,15 @@ def app_main():
 
     plans = [
         {"name": "پلن رایگان", "price": "رایگان", "features": ["۳ استفاده رایگان"], "id": "free"},
-        {"name": "پلن ۳ ماهه حرفه‌ای", "price": "۳ دلار", "features": ["استفاده نامحدود", "پشتیبانی ویژه"], "id": "pro"},
+        {"name": "پلن ۳ ماهه حرفه‌ای", "price": "۳ دلار", "features": ["استفاده نامحدود", "پشتیبانی ویژه"], "id": "pro"}
     ]
-
-    languages = {
-        "فارسی": "fa-IR-DilaraNeural",
-        "انگلیسی": "en-US-AriaNeural",
-        "آلمانی": "de-DE-KatjaNeural",
-        "فرانسوی": "fr-FR-DeniseNeural",
-        "اسپانیایی": "es-ES-ElviraNeural"
-    }
 
     return render_template(
         "index.html",
         email=email,
         free_uses=free_uses,
         plans=plans,
-        languages=languages
+        languages=LANGUAGES
     )
 
 @app.route('/create_payment', methods=['POST'])
@@ -83,11 +82,10 @@ def create_payment():
         return "پلن نامعتبر است", 400
 
     if plan_id == "free":
-        # افزایش استفاده رایگان (نمونه)
         session["free_uses"] = session.get("free_uses", 0) + 1
         return redirect(url_for('app_main'))
 
-    # مبلغ پلن حرفه‌ای
+    # قیمت حرفه‌ای
     amount = "3.00"
 
     payment = paypalrestsdk.Payment({
@@ -115,13 +113,12 @@ def create_payment():
 def payment_execute():
     payment_id = request.args.get('paymentId')
     payer_id = request.args.get('PayerID')
-
     payment = paypalrestsdk.Payment.find(payment_id)
 
     if payment.execute({"payer_id": payer_id}):
-        return "پرداخت با موفقیت انجام شد. متشکریم!"
+        return redirect(url_for('app_main'))
     else:
-        return f"خطا در تایید پرداخت: {payment.error}", 400
+        return f"خطا در تأیید پرداخت: {payment.error}", 400
 
 @app.route('/payment/cancel')
 def payment_cancel():
@@ -163,4 +160,4 @@ def download():
     return send_file("output.mp3", as_attachment=True)
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=3000, debug=True)
+    app.run(host="0.0.0.0", port=3000, debug=True)
