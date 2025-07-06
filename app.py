@@ -33,12 +33,6 @@ LANGUAGES = {
     "اسپانیایی": "es-ES-ElviraNeural"
 }
 
-PLANS = {
-    "monthly": {"price": "10.00", "name": "Monthly Plan"},
-    "quarterly": {"price": "3.00", "name": "3-Month Plan"},
-    "yearly": {"price": "90.00", "name": "Yearly Plan"},
-}
-
 def is_logged_in():
     return google.authorized or session.get("email")
 
@@ -57,12 +51,14 @@ def login():
         password = request.form.get("password")
         if email and password:
             session["email"] = email
+            session["free_uses"] = 0  # شمارنده استفاده رایگان را صفر کن
             return redirect(url_for("app_main"))
 
     if google.authorized:
         resp = google.get("/oauth2/v2/userinfo")
         if resp.ok:
             session["email"] = resp.json().get("email")
+            session["free_uses"] = 0  # شمارنده استفاده رایگان را صفر کن
             return redirect(url_for("app_main"))
 
     return render_template("login.html")
@@ -76,18 +72,19 @@ def logout():
 def app_main():
     if not is_logged_in():
         return redirect(url_for("login"))
-    email = session.get("email", "User")
-    free_uses = 1
+    email = session.get("email", "کاربر")
+    free_uses = session.get("free_uses", 0)
     plans = [
-        {"name": "Free Plan", "price": "Free", "features": ["3 Free Uses"], "id": "free"},
-        {"name": "3-Month Pro Plan", "price": "$3", "features": ["Unlimited Access", "Priority Support"], "id": "quarterly"},
+        {"name": "پلن رایگان", "price": "رایگان", "features": ["۳ استفاده رایگان"], "id": "free"},
+        {"name": "پلن ۳ ماهه حرفه‌ای", "price": "۳ دلار", "features": ["استفاده نامحدود", "پشتیبانی ویژه"], "id": "pro"},
     ]
-    return render_template("index.html", email=email, languages=LANGUAGES, free_uses=free_uses, plans=plans)
-
-@app.route('/plans')
-def plans_page():
-    lang = request.args.get("lang", "fa")
-    return render_template("plans.html", app_name="Voxir", lang=lang)
+    return render_template(
+        "index.html",
+        email=email,
+        languages=LANGUAGES,
+        free_uses=free_uses,
+        plans=plans
+    )
 
 @app.route('/create_payment', methods=['POST'])
 def create_payment():
@@ -95,14 +92,19 @@ def create_payment():
         return redirect(url_for("login"))
 
     plan_id = request.form.get("plan_id")
-    plan = PLANS.get(plan_id)
+    if plan_id not in ["free", "pro"]:
+        return "پلن نامعتبر است", 400
 
-    if not plan:
-        return "Invalid plan selected", 400
+    if plan_id == "free":
+        return redirect(url_for("app_main"))
+
+    amount = "3.00"
 
     payment = paypalrestsdk.Payment({
         "intent": "sale",
-        "payer": {"payment_method": "paypal"},
+        "payer": {
+            "payment_method": "paypal"
+        },
         "redirect_urls": {
             "return_url": url_for('payment_execute', _external=True),
             "cancel_url": url_for('payment_cancel', _external=True)
@@ -110,18 +112,18 @@ def create_payment():
         "transactions": [{
             "item_list": {
                 "items": [{
-                    "name": plan["name"],
+                    "name": "پلن ۳ ماهه حرفه‌ای",
                     "sku": plan_id,
-                    "price": plan["price"],
+                    "price": amount,
                     "currency": "USD",
                     "quantity": 1
                 }]
             },
             "amount": {
-                "total": plan["price"],
+                "total": amount,
                 "currency": "USD"
             },
-            "description": f"Purchase of {plan['name']}"
+            "description": "خرید پلن ۳ ماهه حرفه‌ای"
         }]
     })
 
@@ -129,9 +131,9 @@ def create_payment():
         for link in payment.links:
             if link.rel == "approval_url":
                 return redirect(link.href)
-        return "Error: no approval URL", 500
+        return "خطا در دریافت لینک پرداخت", 500
     else:
-        return f"Payment creation error: {payment.error}", 500
+        return f"خطا در ساخت پرداخت: {payment.error}", 500
 
 @app.route('/payment/execute')
 def payment_execute():
@@ -141,25 +143,31 @@ def payment_execute():
     payment = paypalrestsdk.Payment.find(payment_id)
 
     if payment.execute({"payer_id": payer_id}):
-        return "✅ Payment successful! Thank you."
+        # پس از پرداخت موفق، تعداد استفاده رایگان را حذف یا ریست کن
+        session["free_uses"] = 0
+        return "پرداخت با موفقیت انجام شد. متشکریم!"
     else:
-        return f"❌ Payment execution error: {payment.error}", 400
+        return f"خطا در تایید پرداخت: {payment.error}", 400
 
 @app.route('/payment/cancel')
 def payment_cancel():
-    return "❌ Payment was canceled."
+    return "پرداخت لغو شد."
 
 @app.route('/tts', methods=['POST'])
 def tts():
     if not is_logged_in():
-        return {"error": "Please log in."}, 403
+        return {"error": "لطفا وارد شوید."}, 403
+
+    free_uses = session.get("free_uses", 0)
+    if free_uses >= 3:
+        return {"error": "تعداد استفاده رایگان شما به پایان رسیده است. لطفا پلن خود را ارتقا دهید."}, 403
 
     data = request.get_json()
     text = data.get('text', '')
     voice = data.get('voice', 'fa-IR-DilaraNeural')
 
     if not text.strip():
-        return {"error": "Text is empty."}, 400
+        return {"error": "متن خالی است."}, 400
 
     output_path = "output.mp3"
     if os.path.exists(output_path):
@@ -170,6 +178,9 @@ def tts():
         await communicate.save(output_path)
 
     asyncio.run(synthesize())
+
+    session["free_uses"] = free_uses + 1
+
     return {"audio_url": "/audio/output.mp3"}
 
 @app.route('/audio/<path:filename>')
@@ -181,7 +192,7 @@ def download():
     if not is_logged_in():
         return redirect(url_for("login"))
     if not os.path.exists("output.mp3"):
-        return "File not found", 404
+        return "فایل یافت نشد", 404
     return send_file("output.mp3", as_attachment=True)
 
 if __name__ == "__main__":
