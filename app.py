@@ -74,7 +74,7 @@ def app_main():
     free_uses = 1
     plans = [
         {"name": "پلن رایگان", "price": "رایگان", "features": ["۳ استفاده رایگان"], "id": "free"},
-        {"name": "پلن ۳ ماهه حرفه‌ای", "price": "۲۰ دلار", "features": ["استفاده نامحدود", "پشتیبانی ویژه"], "id": "pro"},
+        {"name": "پلن ۳ ماهه حرفه‌ای", "price": "۳ دلار", "features": ["استفاده نامحدود", "پشتیبانی ویژه"], "id": "pro"},
     ]
     return render_template(
         "index.html",
@@ -96,8 +96,8 @@ def create_payment():
     if plan_id == "free":
         return redirect(url_for("app_main"))
 
-    # قیمت پلن حرفه‌ای
-    amount = "20.00"
+    # قیمت پلن حرفه‌ای تغییر داده شده به ۳ دلار
+    amount = "3.00"
 
     payment = paypalrestsdk.Payment({
         "intent": "sale",
@@ -116,76 +116,3 @@ def create_payment():
                     "price": amount,
                     "currency": "USD",
                     "quantity": 1
-                }]
-            },
-            "amount": {
-                "total": amount,
-                "currency": "USD"
-            },
-            "description": "خرید پلن ۳ ماهه حرفه‌ای"
-        }]
-    })
-
-    if payment.create():
-        for link in payment.links:
-            if link.rel == "approval_url":
-                return redirect(link.href)
-        return "خطا در دریافت لینک پرداخت", 500
-    else:
-        return f"خطا در ساخت پرداخت: {payment.error}", 500
-
-@app.route('/payment/execute')
-def payment_execute():
-    payment_id = request.args.get('paymentId')
-    payer_id = request.args.get('PayerID')
-
-    payment = paypalrestsdk.Payment.find(payment_id)
-
-    if payment.execute({"payer_id": payer_id}):
-        # پرداخت موفق
-        # اینجا می‌توانید کارهای لازم برای فعال کردن پلن را انجام دهید
-        return "پرداخت با موفقیت انجام شد. متشکریم!"
-    else:
-        return f"خطا در تایید پرداخت: {payment.error}", 400
-
-@app.route('/payment/cancel')
-def payment_cancel():
-    return "پرداخت لغو شد."
-
-@app.route('/tts', methods=['POST'])
-def tts():
-    if not is_logged_in():
-        return {"error": "لطفا وارد شوید."}, 403
-
-    data = request.get_json()
-    text = data.get('text', '')
-    voice = data.get('voice', 'fa-IR-DilaraNeural')
-
-    if not text.strip():
-        return {"error": "متن خالی است."}, 400
-
-    output_path = "output.mp3"
-    if os.path.exists(output_path):
-        os.remove(output_path)
-
-    async def synthesize():
-        communicate = edge_tts.Communicate(text, voice)
-        await communicate.save(output_path)
-
-    asyncio.run(synthesize())
-    return {"audio_url": "/audio/output.mp3"}
-
-@app.route('/audio/<path:filename>')
-def serve_audio(filename):
-    return send_file(filename, mimetype='audio/mpeg')
-
-@app.route('/download')
-def download():
-    if not is_logged_in():
-        return redirect(url_for("login"))
-    if not os.path.exists("output.mp3"):
-        return "فایل یافت نشد", 404
-    return send_file("output.mp3", as_attachment=True)
-
-if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=3000, debug=True)
