@@ -141,6 +141,11 @@
             text-align: center;
             margin-top: 15px;
         }
+        /* غیر فعال کردن دکمه هنگام تمام شدن استفاده رایگان */
+        .tts-section button:disabled {
+            background-color: #666 !important;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
@@ -151,7 +156,7 @@
     <main>
         <div class="user-info">
             خوش آمدید، {{ email }}! <br>
-            <strong>تعداد استفاده رایگان باقی‌مانده:</strong> {{ 3 - free_uses }}
+            <strong>تعداد استفاده رایگان باقی‌مانده:</strong> {{ max(3 - free_uses, 0) }}
         </div>
 
         <div class="plans">
@@ -180,7 +185,7 @@
                 <option value="{{ voice }}">{{ lang }}</option>
                 {% endfor %}
             </select>
-            <button onclick="convertTextToSpeech()">تبدیل</button>
+            <button id="convert-btn" onclick="convertTextToSpeech()">تبدیل</button>
 
             <div class="audio-player" id="audio-player" style="display:none;">
                 <audio controls id="audio"></audio>
@@ -191,16 +196,22 @@
     </main>
 
     <script>
+        // تعداد استفاده رایگان باقی‌مانده را از سرور دریافت می‌کنیم
+        const freeUsesLeft = {{ max(3 - free_uses, 0) }};
+        const convertBtn = document.getElementById('convert-btn');
+        const errorDiv = document.getElementById('error-message');
+
+        if (freeUsesLeft === 0) {
+            convertBtn.disabled = true;
+            errorDiv.textContent = 'تعداد استفاده رایگان شما به پایان رسیده است. لطفا پلن خود را خریداری کنید.';
+        }
+
         async function convertTextToSpeech() {
             const text = document.getElementById('text-input').value.trim();
             const voice = document.getElementById('voice-select').value;
-            const errorDiv = document.getElementById('error-message');
-            const audioPlayer = document.getElementById('audio-player');
-            const audioElem = document.getElementById('audio');
-
             errorDiv.textContent = '';
-            audioPlayer.style.display = 'none';
-            audioElem.src = '';
+            document.getElementById('audio-player').style.display = 'none';
+            document.getElementById('audio').src = '';
 
             if (!text) {
                 errorDiv.textContent = 'لطفا متن را وارد کنید.';
@@ -216,10 +227,13 @@
 
                 const result = await response.json();
                 if (response.ok) {
-                    audioElem.src = result.audio_url + '?t=' + new Date().getTime();
-                    audioPlayer.style.display = 'block';
+                    document.getElementById('audio').src = result.audio_url + '?t=' + new Date().getTime();
+                    document.getElementById('audio-player').style.display = 'block';
                 } else {
                     errorDiv.textContent = result.error || 'خطا رخ داده است.';
+                    if (response.status === 403) {
+                        convertBtn.disabled = true;
+                    }
                 }
             } catch (e) {
                 errorDiv.textContent = 'خطا در ارتباط با سرور.';
