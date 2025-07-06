@@ -1,13 +1,13 @@
 <!DOCTYPE html>
-<html lang="fa" dir="rtl">
+<html lang="{{ 'fa' if lang == 'fa' else 'en' }}" dir="{{ 'rtl' if lang == 'fa' else 'ltr' }}">
 <head>
     <meta charset="UTF-8" />
-    <title>پلن‌های اشتراک | {{ app_name }}</title>
+    <title>{{ 'پلن‌های اشتراک' if lang == 'fa' else 'Subscription Plans' }} | {{ app_name }}</title>
     <style>
         body {
             font-family: Tahoma, sans-serif;
             background: #f0f0f7;
-            direction: rtl;
+            direction: {{ 'rtl' if lang == 'fa' else 'ltr' }};
             margin: 0;
             padding: 20px;
         }
@@ -15,6 +15,19 @@
             color: #5a2a83;
             text-align: center;
             margin-bottom: 40px;
+        }
+        .lang-switch {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .lang-switch a {
+            text-decoration: none;
+            font-weight: bold;
+            color: #5a2a83;
+            background: #e0d7f5;
+            padding: 8px 16px;
+            border-radius: 20px;
+            margin: 0 10px;
         }
         .plans-container {
             max-width: 600px;
@@ -59,22 +72,37 @@
     </style>
 </head>
 <body>
-    <h1>پلن‌های اشتراک</h1>
+    <h1>{{ 'پلن‌های اشتراک' if lang == 'fa' else 'Choose Your Subscription Plan' }}</h1>
+
+    <div class="lang-switch">
+        <a href="?lang=fa">🇮🇷 فارسی</a>
+        <a href="?lang=en">🇺🇸 English</a>
+    </div>
+
     <div class="plans-container">
         <div class="plan-card">
-            <div class="plan-title">یک ماهه</div>
-            <div class="plan-price">۱۰ دلار</div>
-            <button class="buy-btn" onclick="alert('پرداخت ماهانه (نمونه)')">خرید</button>
+            <div class="plan-title">{{ 'یک ماهه' if lang == 'fa' else 'Monthly' }}</div>
+            <div class="plan-price">{{ '۱۰ دلار' if lang == 'fa' else '$10' }}</div>
+            <form method="POST" action="/create_payment">
+                <input type="hidden" name="plan_id" value="monthly">
+                <button class="buy-btn" type="submit">{{ 'خرید' if lang == 'fa' else 'Buy' }}</button>
+            </form>
         </div>
         <div class="plan-card">
-            <div class="plan-title">سه ماهه</div>
-            <div class="plan-price">۳ دلار</div>
-            <button class="buy-btn" onclick="alert('پرداخت سه‌ماهه ۳ دلاری (قابل تمدید)')">خرید</button>
+            <div class="plan-title">{{ 'سه ماهه' if lang == 'fa' else '3 Months' }}</div>
+            <div class="plan-price">{{ '۳ دلار' if lang == 'fa' else '$3' }}</div>
+            <form method="POST" action="/create_payment">
+                <input type="hidden" name="plan_id" value="quarterly">
+                <button class="buy-btn" type="submit">{{ 'خرید' if lang == 'fa' else 'Buy' }}</button>
+            </form>
         </div>
         <div class="plan-card">
-            <div class="plan-title">یک ساله</div>
-            <div class="plan-price">۹۰ دلار</div>
-            <button class="buy-btn" onclick="alert('پرداخت سالانه (نمونه)')">خرید</button>
+            <div class="plan-title">{{ 'یک ساله' if lang == 'fa' else 'Yearly' }}</div>
+            <div class="plan-price">{{ '۹۰ دلار' if lang == 'fa' else '$90' }}</div>
+            <form method="POST" action="/create_payment">
+                <input type="hidden" name="plan_id" value="yearly">
+                <button class="buy-btn" type="submit">{{ 'خرید' if lang == 'fa' else 'Buy' }}</button>
+            </form>
         </div>
     </div>
 </body>
