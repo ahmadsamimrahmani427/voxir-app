@@ -30,7 +30,7 @@
             border-radius: 15px;
             padding: 30px;
             box-shadow: 0 0 15px #00bcd4;
-            width: 260px;
+            width: 280px;
             text-align: center;
             transition: transform 0.3s ease;
         }
@@ -74,36 +74,64 @@
             background: #0097a7;
             color: white;
         }
+        /* پلیر صوت و دکمه دانلود */
+        .audio-player {
+            margin-top: 40px;
+            text-align: center;
+        }
+        .download-btn {
+            background: #00bcd4;
+            color: #121212;
+            padding: 10px 25px;
+            border-radius: 8px;
+            font-weight: bold;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 15px;
+            transition: background 0.3s ease;
+        }
+        .download-btn:hover {
+            background: #0097a7;
+            color: white;
+        }
     </style>
 </head>
 <body>
     <h1>پلن‌های اشتراک Voxir</h1>
     <div class="plans-container">
+        {% for plan in plans %}
         <div class="plan-card">
-            <div class="plan-title">پلن رایگان (تست)</div>
-            <div class="plan-price">رایگان</div>
+            <div class="plan-title">{{ plan.name }}</div>
+            <div class="plan-price">{{ plan.price }}</div>
             <ul class="features-list">
-                <li>۳ استفاده رایگان</li>
-                <li>امکان تست سرویس</li>
+                {% for feature in plan.features %}
+                <li>{{ feature }}</li>
+                {% endfor %}
             </ul>
-            <form action="/create_payment" method="post">
-                <input type="hidden" name="plan_id" value="free">
-                <button type="submit" class="buy-btn">انتخاب این پلن</button>
-            </form>
+
+            {% if plan.id == 'free' %}
+                <form action="{{ url_for('app_main') }}" method="get">
+                    <button type="submit" class="buy-btn">استفاده رایگان</button>
+                </form>
+            {% else %}
+                <form action="{{ url_for('create_payment') }}" method="post">
+                    <input type="hidden" name="plan_id" value="{{ plan.id }}">
+                    <button type="submit" class="buy-btn">خرید این پلن</button>
+                </form>
+            {% endif %}
         </div>
-        <div class="plan-card">
-            <div class="plan-title">پلن ۳ ماهه حرفه‌ای</div>
-            <div class="plan-price">۳ دلار</div>
-            <ul class="features-list">
-                <li>استفاده نامحدود</li>
-                <li>پشتیبانی ویژه</li>
-                <li>اعتبار ۳ ماهه</li>
-            </ul>
-            <form action="/create_payment" method="post">
-                <input type="hidden" name="plan_id" value="pro">
-                <button type="submit" class="buy-btn">خرید این پلن</button>
-            </form>
-        </div>
+        {% endfor %}
     </div>
+
+    {% if audio_url %}
+    <div class="audio-player">
+        <audio controls id="audioPlayer" style="width: 100%; max-width: 500px;">
+            <source src="{{ audio_url }}" type="audio/mpeg" />
+            مرورگر شما از پخش صدا پشتیبانی نمی‌کند.
+        </audio>
+        <br />
+        <a href="{{ url_for('download') }}" class="download-btn">دانلود صدا</a>
+    </div>
+    {% endif %}
 </body>
 </html>
