@@ -34,11 +34,7 @@ LANGUAGES = {
 }
 
 def is_logged_in():
-    return google.authorized or session.get("email")
-
-@app.context_processor
-def inject_google():
-    return dict(google=google)
+    return google.authorized or session.get("email") is not None
 
 @app.route('/')
 def welcome():
@@ -51,16 +47,14 @@ def login():
         password = request.form.get("password")
         if email and password:
             session["email"] = email
-            # مقدار اولیه تعداد استفاده رایگان را ست می‌کنیم
-            session["free_uses"] = 0
+            session.setdefault("free_uses", 0)
             return redirect(url_for("app_main"))
 
     if google.authorized:
         resp = google.get("/oauth2/v2/userinfo")
         if resp.ok:
             session["email"] = resp.json().get("email")
-            # مقدار اولیه تعداد استفاده رایگان را ست می‌کنیم
-            session["free_uses"] = 0
+            session.setdefault("free_uses", 0)
             return redirect(url_for("app_main"))
 
     return render_template("login.html")
@@ -74,13 +68,16 @@ def logout():
 def app_main():
     if not is_logged_in():
         return redirect(url_for("login"))
+
     email = session.get("email", "کاربر")
     free_uses = session.get("free_uses", 0)
     free_uses_left = max(3 - free_uses, 0)
+
     plans = [
         {"name": "پلن رایگان", "price": "رایگان", "features": ["۳ استفاده رایگان"], "id": "free"},
         {"name": "پلن ۳ ماهه حرفه‌ای", "price": "۳ دلار", "features": ["استفاده نامحدود", "پشتیبانی ویژه"], "id": "pro"},
     ]
+
     return render_template(
         "index.html",
         email=email,
@@ -100,15 +97,13 @@ def create_payment():
         return "پلن نامعتبر است", 400
 
     if plan_id == "free":
-        # اگر استفاده رایگان به پایان رسیده بود اجازه ندهیم
         free_uses = session.get("free_uses", 0)
         if free_uses >= 3:
-            return "تعداد استفاده رایگان شما به پایان رسیده است. لطفا پلن حرفه‌ای را خریداری کنید.", 403
+            return "تعداد استفاده رایگان به پایان رسیده. لطفا پلن حرفه‌ای را خریداری کنید.", 403
         else:
             session["free_uses"] = free_uses + 1
             return redirect(url_for("app_main"))
 
-    # پلن حرفه‌ای (۳ دلار)
     amount = "3.00"
 
     payment = paypalrestsdk.Payment({
@@ -154,8 +149,7 @@ def payment_execute():
     payment = paypalrestsdk.Payment.find(payment_id)
 
     if payment.execute({"payer_id": payer_id}):
-        # پرداخت موفق: در اینجا می‌توانید وضعیت خرید پلن را ذخیره کنید
-        session["free_uses"] = 0  # برای مثال ریست کردن استفاده رایگان
+        session["free_uses"] = 0  # ریست کردن استفاده رایگان پس از خرید پلن
         return "پرداخت با موفقیت انجام شد. متشکریم!"
     else:
         return f"خطا در تایید پرداخت: {payment.error}", 400
