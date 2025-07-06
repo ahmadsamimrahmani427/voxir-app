@@ -246,6 +246,12 @@
             {% endfor %}
         </div>
 
+        <!-- دکمه پرداخت PayPal -->
+        <div style="text-align:center; margin-top: 40px;">
+            <h3>پرداخت با PayPal (Sandbox)</h3>
+            <div id="paypal-button-container"></div>
+        </div>
+
         <div class="tts-section">
             <h3>تبدیل متن به صدا</h3>
             <textarea id="text-input" placeholder="متن خود را اینجا وارد کنید..."></textarea>
@@ -266,6 +272,31 @@
             <div class="error-message" id="error-message"></div>
         </div>
     </main>
+
+    <!-- اضافه کردن SDK و دکمه PayPal -->
+    <script src="https://www.paypal.com/sdk/js?client-id=AVOqX9uegnvQoz6cpoxezjEhv_P1ljaHCq1tt_xSSg_DtEP976IaMzsjGf5OGdttuYUawR21q1H0L2cE&currency=USD"></script>
+    <script>
+        paypal.Buttons({
+            createOrder: function(data, actions) {
+                return actions.order.create({
+                    purchase_units: [{
+                        amount: {
+                            value: '20.00'  // مبلغ پرداختی به دلار (در صورت نیاز تغییر دهید)
+                        }
+                    }]
+                });
+            },
+            onApprove: function(data, actions) {
+                return actions.order.capture().then(function(details) {
+                    alert('پرداخت با موفقیت انجام شد، ' + details.payer.name.given_name + '!');
+                    window.location.href = "/payment-success"; // مسیر پس از پرداخت موفق
+                });
+            },
+            onError: function(err) {
+                alert('خطا در پرداخت: ' + err);
+            }
+        }).render('#paypal-button-container');
+    </script>
 
     <script>
         async function convertTextToSpeech() {
