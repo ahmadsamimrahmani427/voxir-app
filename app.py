@@ -1,9 +1,9 @@
-from flask import Flask, render_template, redirect, url_for, request, session, send_file, jsonify
+from flask import Flask, render_template, redirect, url_for, request, session, send_file
 from flask_dance.contrib.google import make_google_blueprint, google
 import edge_tts
 import asyncio
 import os
-import paypalrestsdk
+import paypalrestsdk  # اضافه شد
 
 app = Flask(__name__)
 app.secret_key = "your-secret-key"
@@ -51,17 +51,12 @@ def login():
         password = request.form.get("password")
         if email and password:
             session["email"] = email
-            # مقداردهی اولیه تعداد استفاده رایگان
-            session.setdefault("free_uses", 3)
-            session["paid"] = False
             return redirect(url_for("app_main"))
 
     if google.authorized:
         resp = google.get("/oauth2/v2/userinfo")
         if resp.ok:
             session["email"] = resp.json().get("email")
-            session.setdefault("free_uses", 3)
-            session["paid"] = False
             return redirect(url_for("app_main"))
 
     return render_template("login.html")
@@ -76,7 +71,7 @@ def app_main():
     if not is_logged_in():
         return redirect(url_for("login"))
     email = session.get("email", "کاربر")
-    free_uses = session.get("free_uses", 3)
+    free_uses = 1
     plans = [
         {"name": "پلن رایگان", "price": "رایگان", "features": ["۳ استفاده رایگان"], "id": "free"},
         {"name": "پلن ۳ ماهه حرفه‌ای", "price": "۳ دلار", "features": ["استفاده نامحدود", "پشتیبانی ویژه"], "id": "pro"},
@@ -99,18 +94,16 @@ def create_payment():
         return "پلن نامعتبر است", 400
 
     if plan_id == "free":
-        free_uses = session.get("free_uses", 3)
-        if free_uses > 0:
-            session["free_uses"] = free_uses - 1
-            return redirect(url_for("app_main"))
-        else:
-            return "استفاده رایگان شما به پایان رسیده است. لطفاً پلن حرفه‌ای را خریداری کنید.", 403
+        return redirect(url_for("app_main"))
 
-    amount = "3.00"  # قیمت ۳ دلار
+    # قیمت پلن حرفه‌ای (تغییر یافته به ۳ دلار)
+    amount = "3.00"
 
     payment = paypalrestsdk.Payment({
         "intent": "sale",
-        "payer": {"payment_method": "paypal"},
+        "payer": {
+            "payment_method": "paypal"
+        },
         "redirect_urls": {
             "return_url": url_for('payment_execute', _external=True),
             "cancel_url": url_for('payment_cancel', _external=True)
@@ -125,7 +118,10 @@ def create_payment():
                     "quantity": 1
                 }]
             },
-            "amount": {"total": amount, "currency": "USD"},
+            "amount": {
+                "total": amount,
+                "currency": "USD"
+            },
             "description": "خرید پلن ۳ ماهه حرفه‌ای"
         }]
     })
@@ -146,7 +142,6 @@ def payment_execute():
     payment = paypalrestsdk.Payment.find(payment_id)
 
     if payment.execute({"payer_id": payer_id}):
-        session["paid"] = True
         return "پرداخت با موفقیت انجام شد. متشکریم!"
     else:
         return f"خطا در تایید پرداخت: {payment.error}", 400
@@ -158,20 +153,14 @@ def payment_cancel():
 @app.route('/tts', methods=['POST'])
 def tts():
     if not is_logged_in():
-        return jsonify({"error": "لطفا وارد شوید."}), 403
+        return {"error": "لطفا وارد شوید."}, 403
 
     data = request.get_json()
     text = data.get('text', '')
     voice = data.get('voice', 'fa-IR-DilaraNeural')
 
     if not text.strip():
-        return jsonify({"error": "متن خالی است."}), 400
-
-    free_uses = session.get("free_uses", 3)
-    paid = session.get("paid", False)
-
-    if not paid and free_uses <= 0:
-        return jsonify({"error": "استفاده رایگان به پایان رسیده است. لطفاً پلن حرفه‌ای را خریداری کنید."}), 403
+        return {"error": "متن خالی است."}, 400
 
     output_path = "output.mp3"
     if os.path.exists(output_path):
@@ -182,16 +171,10 @@ def tts():
         await communicate.save(output_path)
 
     asyncio.run(synthesize())
-
-    if not paid:
-        session["free_uses"] = free_uses - 1
-
-    return jsonify({"audio_url": "/audio/output.mp3"})
+    return {"audio_url": "/audio/output.mp3"}
 
 @app.route('/audio/<path:filename>')
 def serve_audio(filename):
-    if not is_logged_in():
-        return redirect(url_for("login"))
     return send_file(filename, mimetype='audio/mpeg')
 
 @app.route('/download')
@@ -203,6 +186,4 @@ def download():
     return send_file("output.mp3", as_attachment=True)
 
 if __name__ == "__main__":
-    import os
-    port = int(os.environ.get("PORT", 3000))
-    app.run(host='0.0.0.0', port=port, debug=True)
+    app.run(host='0.0.0.0', port=3000, debug=True)
