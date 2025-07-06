@@ -6,56 +6,58 @@
     <style>
         body {
             background-color: #121212;
-            color: #eee;
+            color: #e0e0e0;
             font-family: Tahoma, sans-serif;
             margin: 0;
             padding: 20px;
             direction: rtl;
         }
-        h1, h2 {
-            color: #0af;
+        h1 {
+            color: #0099ff;
             text-align: center;
+            margin-bottom: 30px;
         }
         .container {
             max-width: 720px;
             margin: auto;
-            background-color: #1f1f1f;
-            padding: 30px;
+            background-color: #1c1c1c;
             border-radius: 15px;
-            box-shadow: 0 0 20px #0af;
+            padding: 25px;
+            box-shadow: 0 0 15px #0099ff;
         }
         label {
             display: block;
             margin-bottom: 10px;
             font-weight: bold;
-            color: #aaf;
+            color: #66ccff;
         }
         textarea {
             width: 100%;
-            height: 150px;
-            padding: 12px;
+            height: 140px;
+            padding: 10px;
             font-size: 1.1em;
             border-radius: 10px;
             border: none;
-            resize: vertical;
             background-color: #121212;
-            color: #eee;
+            color: #e0e0e0;
+            resize: vertical;
         }
         select {
-            margin-top: 15px;
+            margin-top: 12px;
             padding: 8px;
             font-size: 1em;
             border-radius: 8px;
             border: none;
             background-color: #121212;
-            color: #eee;
+            color: #e0e0e0;
+            width: 100%;
         }
         button {
             margin-top: 20px;
-            background-color: #0af;
+            background-color: #0099ff;
             color: white;
             border: none;
-            padding: 14px 25px;
+            padding: 15px;
             font-size: 1.2em;
             border-radius: 40px;
             cursor: pointer;
@@ -63,8 +65,12 @@
             width: 100%;
             transition: background-color 0.3s ease;
         }
-        button:hover {
-            background-color: #08a;
+        button:hover:not(:disabled) {
+            background-color: #007acc;
+        }
+        button:disabled {
+            background-color: #444444;
+            cursor: not-allowed;
         }
         audio {
             margin-top: 25px;
@@ -72,14 +78,14 @@
             outline: none;
             border-radius: 10px;
             background-color: #121212;
-            box-shadow: 0 0 10px #0af;
+            box-shadow: 0 0 15px #0099ff;
         }
         .download-link {
             display: block;
             margin-top: 15px;
             text-align: center;
             font-weight: bold;
-            color: #0af;
+            color: #0099ff;
             text-decoration: none;
         }
         .download-link:hover {
@@ -87,58 +93,58 @@
         }
         .user-info {
             text-align: center;
-            margin-bottom: 30px;
-            color: #aaa;
+            margin-bottom: 25px;
+            color: #999;
         }
         a.logout-link {
-            color: #0af;
+            color: #0099ff;
             text-decoration: none;
             font-weight: bold;
-            margin-left: 10px;
+            margin-right: 10px;
         }
         a.logout-link:hover {
             text-decoration: underline;
         }
         .plans-container {
-            margin-top: 40px;
+            margin-top: 35px;
             display: flex;
             justify-content: center;
             gap: 30px;
             flex-wrap: wrap;
         }
         .plan-card {
-            background: #222;
+            background: #222222;
             border-radius: 15px;
             padding: 25px;
-            box-shadow: 0 0 15px #0af;
+            box-shadow: 0 0 15px #0099ff;
             width: 220px;
             text-align: center;
-            color: #eee;
+            color: #e0e0e0;
             transition: box-shadow 0.3s ease;
         }
         .plan-card:hover {
-            box-shadow: 0 0 30px #08a;
+            box-shadow: 0 0 30px #0066cc;
         }
         .plan-title {
             font-weight: bold;
             font-size: 1.4em;
             margin-bottom: 15px;
-            color: #0af;
+            color: #33bbff;
         }
         .plan-price {
             font-size: 1.2em;
             margin-bottom: 15px;
-            color: #66c0ff;
+            color: #66ccff;
         }
         .plan-features {
             list-style: none;
             padding: 0;
             margin-bottom: 20px;
-            color: #aad4ff;
+            color: #99ccff;
             min-height: 70px;
         }
         .buy-btn {
-            background: #0af;
+            background: #0099ff;
             color: white;
             border: none;
             padding: 12px 20px;
@@ -148,8 +154,8 @@
             transition: background 0.3s ease;
             width: 100%;
         }
-        .buy-btn:hover {
-            background: #08a;
+        .buy-btn:hover:not(:disabled) {
+            background: #007acc;
         }
         .buy-btn:disabled {
             background: #444;
