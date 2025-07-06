@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect, url_for, request, session, send_file
+from flask import Flask, render_template, redirect, url_for, request, session, send_file, jsonify
 from flask_dance.contrib.google import make_google_blueprint, google
 import edge_tts
 import asyncio
@@ -12,7 +12,7 @@ GOOGLE_CLIENT_ID = "786899786922-vu682l6h78vlc1ab1gh3jq0ffjlmrugo.apps.googleuse
 GOOGLE_CLIENT_SECRET = "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"
 
 paypalrestsdk.configure({
-    "mode": "sandbox",
+    "mode": "sandbox",  # یا "live" وقتی آماده شد
     "client_id": "BAAPhnx7VkJgKOMM9B-Jowx06XDwRhrIeKIewOZBdKWJtkEDalPgw9vj6xw5Xi21YTIChXHr00JATIbVqY",
     "client_secret": "ECQhDhRs-bMYbcVfOkfqIpS8ZizF5S6YPNRXlRdmbc00u7XfdacA0nXOpPuTbOpiG5Fb6DWGrt0lBZ9S"
 })
@@ -51,12 +51,14 @@ def login():
         password = request.form.get("password")
         if email and password:
             session["email"] = email
+            session.setdefault("free_uses_left", 3)  # ۳ بار استفاده رایگان
             return redirect(url_for("app_main"))
 
     if google.authorized:
         resp = google.get("/oauth2/v2/userinfo")
         if resp.ok:
             session["email"] = resp.json().get("email")
+            session.setdefault("free_uses_left", 3)
             return redirect(url_for("app_main"))
 
     return render_template("login.html")
@@ -70,19 +72,21 @@ def logout():
 def app_main():
     if not is_logged_in():
         return redirect(url_for("login"))
+
     email = session.get("email", "کاربر")
-    free_uses = 3  # تعداد استفاده رایگان
+    free_uses_left = session.get("free_uses_left", 3)
+
     plans = [
-        {"name": "پلن رایگان", "price": "رایگان", "features": ["۳ استفاده رایگان"], "id": "free"},
+        {"name": "پلن رایگان", "price": "رایگان", "features": [f"۳ استفاده رایگان ({free_uses_left} باقی مانده)"], "id": "free"},
         {"name": "پلن ۳ ماهه حرفه‌ای", "price": "۳ دلار", "features": ["استفاده نامحدود", "پشتیبانی ویژه"], "id": "pro"},
     ]
-    audio_url = "/audio/output.mp3" if os.path.exists("output.mp3") else None
+
     return render_template(
-        "plans.html",
+        "index.html",
         email=email,
-        free_uses=free_uses,
-        plans=plans,
-        audio_url=audio_url
+        languages=LANGUAGES,
+        free_uses=free_uses_left,
+        plans=plans
     )
 
 @app.route('/create_payment', methods=['POST'])
@@ -95,13 +99,21 @@ def create_payment():
         return "پلن نامعتبر است", 400
 
     if plan_id == "free":
+        # استفاده رایگان: فقط اگر استفاده رایگان باقی باشد
+        free_uses_left = session.get("free_uses_left", 3)
+        if free_uses_left <= 0:
+            return "استفاده رایگان شما به پایان رسیده است.", 403
+        session["free_uses_left"] = free_uses_left - 1
         return redirect(url_for("app_main"))
 
+    # پلن حرفه‌ای ۳ ماهه ۳ دلار
     amount = "3.00"
 
     payment = paypalrestsdk.Payment({
         "intent": "sale",
-        "payer": {"payment_method": "paypal"},
+        "payer": {
+            "payment_method": "paypal"
+        },
         "redirect_urls": {
             "return_url": url_for('payment_execute', _external=True),
             "cancel_url": url_for('payment_cancel', _external=True)
@@ -116,7 +128,10 @@ def create_payment():
                     "quantity": 1
                 }]
             },
-            "amount": {"total": amount, "currency": "USD"},
+            "amount": {
+                "total": amount,
+                "currency": "USD"
+            },
             "description": "خرید پلن ۳ ماهه حرفه‌ای"
         }]
     })
@@ -137,6 +152,8 @@ def payment_execute():
     payment = paypalrestsdk.Payment.find(payment_id)
 
     if payment.execute({"payer_id": payer_id}):
+        # پرداخت موفق -> می‌توان اینجا اعتبار پلن را به کاربر داد (مثلاً ذخیره در دیتابیس)
+        session["free_uses_left"] = 9999  # دسترسی نامحدود به جای پلن حرفه‌ای
         return "پرداخت با موفقیت انجام شد. متشکریم!"
     else:
         return f"خطا در تایید پرداخت: {payment.error}", 400
@@ -148,14 +165,14 @@ def payment_cancel():
 @app.route('/tts', methods=['POST'])
 def tts():
     if not is_logged_in():
-        return {"error": "لطفا وارد شوید."}, 403
+        return jsonify({"error": "لطفا وارد شوید."}), 403
 
     data = request.get_json()
     text = data.get('text', '')
     voice = data.get('voice', 'fa-IR-DilaraNeural')
 
     if not text.strip():
-        return {"error": "متن خالی است."}, 400
+        return jsonify({"error": "متن خالی است."}), 400
 
     output_path = "output.mp3"
     if os.path.exists(output_path):
@@ -166,7 +183,7 @@ def tts():
         await communicate.save(output_path)
 
     asyncio.run(synthesize())
-    return {"audio_url": "/audio/output.mp3"}
+    return jsonify({"audio_url": "/audio/output.mp3"})
 
 @app.route('/audio/<path:filename>')
 def serve_audio(filename):
