@@ -2,7 +2,7 @@
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>ورود | Voxir</title>
+    <title>خوش آمدید | Voxir</title>
     <style>
         body {
             background-color: #121212;
@@ -15,58 +15,31 @@
             height: 100vh;
             margin: 0;
         }
-        h2 {
+        h1 {
             color: #00bcd4;
+            font-size: 2.2em;
         }
-        form {
-            background-color: #1e1e1e;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 0 10px rgba(0, 188, 212, 0.3);
-            width: 320px;
-        }
-        input[type="email"], input[type="password"] {
-            width: 100%;
-            padding: 10px;
-            margin: 10px 0;
-            background-color: #2a2a2a;
-            border: 1px solid #444;
-            border-radius: 6px;
-            color: white;
-        }
-        button {
-            background-color: #00bcd4;
-            border: none;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 6px;
-            cursor: pointer;
-            width: 100%;
-            font-weight: bold;
-        }
-        button:hover {
-            background-color: #0097a7;
-        }
-        .google-login {
+        p {
             margin-top: 15px;
-            text-align: center;
+            font-size: 1.2em;
         }
-        .google-login a {
-            color: #00bcd4;
+        a.button {
+            background-color: #00bcd4;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
             text-decoration: none;
+            font-weight: bold;
+            margin-top: 30px;
+        }
+        a.button:hover {
+            background-color: #0097a7;
         }
     </style>
 </head>
 <body>
-    <h2>ورود به حساب کاربری</h2>
-    <form method="POST">
-        <input type="email" name="email" placeholder="ایمیل">
-        <input type="password" name="password" placeholder="رمز عبور">
-        <button type="submit">ورود</button>
-    </form>
-    <div class="google-login">
-        <p>یا ورود با حساب گوگل:</p>
-        <a href="/login/google">ورود با گوگل</a>
-    </div>
+    <h1>به اپلیکیشن Voxir خوش آمدید</h1>
+    <p>لطفاً برای ادامه وارد حساب کاربری خود شوید.</p>
+    <a href="/login" class="button">ورود به حساب</a>
 </body>
 </html>
