@@ -3,7 +3,7 @@ from flask_dance.contrib.google import make_google_blueprint, google
 import edge_tts
 import asyncio
 import os
-import paypalrestsdk
+import paypalrestsdk  # اضافه شد
 
 app = Flask(__name__)
 app.secret_key = "your-secret-key"
@@ -51,15 +51,12 @@ def login():
         password = request.form.get("password")
         if email and password:
             session["email"] = email
-            session["free_uses"] = 0  # مقدار اولیه استفاده رایگان
             return redirect(url_for("app_main"))
 
     if google.authorized:
         resp = google.get("/oauth2/v2/userinfo")
         if resp.ok:
             session["email"] = resp.json().get("email")
-            if "free_uses" not in session:
-                session["free_uses"] = 0
             return redirect(url_for("app_main"))
 
     return render_template("login.html")
@@ -74,10 +71,7 @@ def app_main():
     if not is_logged_in():
         return redirect(url_for("login"))
     email = session.get("email", "کاربر")
-    free_uses = session.get("free_uses", 0)
-    max_free_uses = 3
-    free_uses_left = max(0, max_free_uses - free_uses)
-
+    free_uses = 1
     plans = [
         {"name": "پلن رایگان", "price": "رایگان", "features": ["۳ استفاده رایگان"], "id": "free"},
         {"name": "پلن ۳ ماهه حرفه‌ای", "price": "۳ دلار", "features": ["استفاده نامحدود", "پشتیبانی ویژه"], "id": "pro"},
@@ -85,9 +79,9 @@ def app_main():
     return render_template(
         "index.html",
         email=email,
-        free_uses_left=free_uses_left,
-        plans=plans,
-        languages=LANGUAGES
+        languages=LANGUAGES,
+        free_uses=free_uses,
+        plans=plans
     )
 
 @app.route('/create_payment', methods=['POST'])
@@ -100,14 +94,9 @@ def create_payment():
         return "پلن نامعتبر است", 400
 
     if plan_id == "free":
-        # اگر استفاده رایگان تموم نشده اجازه بده
-        free_uses = session.get("free_uses", 0)
-        if free_uses >= 3:
-            return "تعداد استفاده رایگان شما به پایان رسیده است. لطفاً پلن حرفه‌ای را خریداری کنید.", 403
-        session["free_uses"] = free_uses + 1
         return redirect(url_for("app_main"))
 
-    # قیمت پلن حرفه‌ای (۳ دلار)
+    # قیمت پلن حرفه‌ای: 3 دلار
     amount = "3.00"
 
     payment = paypalrestsdk.Payment({
@@ -153,8 +142,6 @@ def payment_execute():
     payment = paypalrestsdk.Payment.find(payment_id)
 
     if payment.execute({"payer_id": payer_id}):
-        # بعد از پرداخت موفق، می‌توان توکن اشتراک رو در دیتابیس ذخیره کرد یا فیلد session را تنظیم کرد
-        # فعلاً صرفاً پیام موفقیت نمایش داده می‌شود
         return "پرداخت با موفقیت انجام شد. متشکریم!"
     else:
         return f"خطا در تایید پرداخت: {payment.error}", 400
