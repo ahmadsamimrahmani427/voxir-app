@@ -3,7 +3,7 @@ from flask_dance.contrib.google import make_google_blueprint, google
 import edge_tts
 import asyncio
 import os
-import paypalrestsdk  # اضافه شد
+import paypalrestsdk
 
 app = Flask(__name__)
 app.secret_key = "your-secret-key"
@@ -12,9 +12,9 @@ GOOGLE_CLIENT_ID = "786899786922-vu682l6h78vlc1ab1gh3jq0ffjlmrugo.apps.googleuse
 GOOGLE_CLIENT_SECRET = "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"
 
 paypalrestsdk.configure({
-    "mode": "sandbox",
-    "client_id": "AVOqX9uegnvQoz6cpoxezjEhv_P1ljaHCq1tt_xSSg_DtEP976IaMzsjGf5OGdttuYUawR21q1H0L2cE",
-    "client_secret": "EH_IHMgTO6hOFa13s4PxWE5vhAiLhT-zWpVAl5kAvp4S_iNDK1E9fq1lQF7ASH-a2cTlNTP40OsZm1_j"
+    "mode": "live",   # حالت واقعی برای پرداخت
+    "client_id": "کلاینت‌آیدی-واقعی-شما-اینجا-بگذارید",
+    "client_secret": "کلاینت-سکریت-واقعی-شما-اینجا-بگذارید"
 })
 
 google_bp = make_google_blueprint(
@@ -96,7 +96,6 @@ def create_payment():
     if plan_id == "free":
         return redirect(url_for("app_main"))
 
-    # قیمت پلن حرفه‌ای (تغییر یافته به ۳ دلار)
     amount = "3.00"
 
     payment = paypalrestsdk.Payment({
