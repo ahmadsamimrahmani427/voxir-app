@@ -10,7 +10,6 @@ def create_payment():
     if plan_id == "free":
         return redirect(url_for("app_main"))
 
-    # قیمت پلن حرفه‌ای تغییر داده شده به ۳ دلار
     amount = "3.00"
 
     payment = paypalrestsdk.Payment({
@@ -22,22 +21,26 @@ def create_payment():
             "return_url": url_for('payment_execute', _external=True),
             "cancel_url": url_for('payment_cancel', _external=True)
         },
-        "transactions": [{
-            "item_list": {
-                "items": [{
-                    "name": "پلن ۳ ماهه حرفه‌ای",
-                    "sku": plan_id,
-                    "price": amount,
-                    "currency": "USD",
-                    "quantity": 1
-                }]
-            },
-            "amount": {
-                "total": amount,
-                "currency": "USD"
-            },
-            "description": "خرید پلن ۳ ماهه حرفه‌ای"
-        }]
+        "transactions": [
+            {
+                "item_list": {
+                    "items": [
+                        {
+                            "name": "پلن ۳ ماهه حرفه‌ای",
+                            "sku": plan_id,
+                            "price": amount,
+                            "currency": "USD",
+                            "quantity": 1
+                        }
+                    ]
+                },
+                "amount": {
+                    "total": amount,
+                    "currency": "USD"
+                },
+                "description": "خرید پلن ۳ ماهه حرفه‌ای"
+            }
+        ]
     })
 
     if payment.create():
