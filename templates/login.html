@@ -2,86 +2,69 @@
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8" />
-    <title>ورود به حساب | Voxir</title>
+    <title>ورود به حساب</title>
     <style>
         body {
             background-color: #121212;
-            color: white;
+            color: #eee;
             font-family: Tahoma, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            margin: 0; padding: 0;
+            display: flex; justify-content: center; align-items: center;
             height: 100vh;
-            margin: 0;
         }
-        form {
-            background-color: #1e1e1e;
-            padding: 30px;
+        .login-container {
+            background: #1e1e1e;
+            padding: 40px 50px;
             border-radius: 15px;
-            box-shadow: 0 0 20px #00bcd4;
+            box-shadow: 0 0 10px #3da6ff;
             width: 320px;
-            direction: rtl;
+            text-align: center;
         }
         h2 {
-            text-align: center;
-            color: #00bcd4;
-            margin-bottom: 25px;
-        }
-        label {
-            display: block;
-            margin-bottom: 8px;
-            color: #ccc;
-            font-weight: bold;
+            margin-bottom: 30px;
+            color: #3da6ff;
         }
         input[type="email"], input[type="password"] {
             width: 100%;
-            padding: 10px;
+            padding: 12px 15px;
             margin-bottom: 20px;
             border: none;
             border-radius: 8px;
             font-size: 1em;
         }
         button {
-            background-color: #00bcd4;
-            color: #121212;
+            background-color: #3da6ff;
+            color: white;
             border: none;
-            padding: 12px;
+            padding: 14px 0;
             width: 100%;
-            border-radius: 40px;
+            font-size: 1em;
             font-weight: bold;
+            border-radius: 40px;
             cursor: pointer;
-            font-size: 1.1em;
             transition: background-color 0.3s ease;
         }
         button:hover {
-            background-color: #0097a7;
+            background-color: #61b4ff;
         }
         .google-login {
             margin-top: 20px;
-            text-align: center;
-        }
-        .google-login a {
-            color: #00bcd4;
-            text-decoration: none;
-            font-weight: bold;
-            font-size: 1em;
-        }
-        .google-login a:hover {
+            color: #3da6ff;
             text-decoration: underline;
+            cursor: pointer;
+            display: block;
         }
     </style>
 </head>
 <body>
-    <form method="post" action="/login">
-        <h2>ورود به حساب کاربری</h2>
-        <label for="email">ایمیل</label>
-        <input type="email" id="email" name="email" required placeholder="example@example.com" />
-        <label for="password">رمز عبور</label>
-        <input type="password" id="password" name="password" required placeholder="********" />
-        <button type="submit">ورود</button>
-        <div class="google-login">
-            <a href="{{ url_for('google.login') }}">ورود با حساب گوگل</a>
-        </div>
-    </form>
+    <div class="login-container">
+        <h2>ورود به حساب</h2>
+        <form method="POST">
+            <input type="email" name="email" placeholder="ایمیل" required />
+            <input type="password" name="password" placeholder="رمز عبور" required />
+            <button type="submit">ورود</button>
+        </form>
+        <a href="{{ url_for('google.login') }}" class="google-login">ورود با گوگل</a>
+    </div>
 </body>
 </html>
