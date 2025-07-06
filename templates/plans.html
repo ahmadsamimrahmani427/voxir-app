@@ -2,79 +2,107 @@
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8" />
-    <title>پلن‌های اشتراک | {{ app_name }}</title>
+    <title>پلن‌های اشتراک | Voxir</title>
     <style>
         body {
             font-family: Tahoma, sans-serif;
-            background: #f0f0f7;
+            background-color: #121212;
+            color: white;
             direction: rtl;
             margin: 0;
-            padding: 20px;
+            padding: 30px;
         }
         h1 {
-            color: #5a2a83;
+            color: #00bcd4;
             text-align: center;
             margin-bottom: 40px;
         }
         .plans-container {
-            max-width: 600px;
+            max-width: 700px;
             margin: auto;
             display: flex;
-            justify-content: space-around;
-            gap: 20px;
+            justify-content: center;
+            gap: 30px;
             flex-wrap: wrap;
         }
         .plan-card {
-            background: white;
+            background: #1e1e1e;
             border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 4px 10px rgba(90, 42, 131, 0.2);
-            width: 180px;
+            padding: 30px;
+            box-shadow: 0 0 15px #00bcd4;
+            width: 260px;
             text-align: center;
+            transition: transform 0.3s ease;
+        }
+        .plan-card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 25px #00bcd4;
         }
         .plan-title {
             font-weight: bold;
-            font-size: 1.4em;
+            font-size: 1.6em;
             margin-bottom: 15px;
-            color: #5a2a83;
+            color: #00bcd4;
         }
         .plan-price {
-            font-size: 1.2em;
-            margin-bottom: 20px;
-            color: #8237b5;
+            font-size: 1.3em;
+            margin-bottom: 25px;
+            color: #00acc1;
         }
-        .buy-btn {
-            background: #5a2a83;
-            color: white;
+        .features-list {
+            list-style: none;
+            padding: 0;
+            margin-bottom: 25px;
+            font-size: 1.1em;
+            color: #ccc;
+        }
+        .features-list li {
+            margin: 10px 0;
+        }
+        button.buy-btn {
+            background: #00bcd4;
+            color: #121212;
             border: none;
-            padding: 12px 20px;
+            padding: 12px 25px;
             border-radius: 40px;
             cursor: pointer;
             font-weight: bold;
+            font-size: 1.1em;
             transition: background 0.3s ease;
         }
-        .buy-btn:hover {
-            background: #7a44a1;
+        button.buy-btn:hover {
+            background: #0097a7;
+            color: white;
         }
     </style>
 </head>
 <body>
-    <h1>پلن‌های اشتراک</h1>
+    <h1>پلن‌های اشتراک Voxir</h1>
     <div class="plans-container">
         <div class="plan-card">
-            <div class="plan-title">یک ماهه</div>
-            <div class="plan-price">۱۰ دلار</div>
-            <button class="buy-btn" onclick="alert('پرداخت ماهانه (نمونه)')">خرید</button>
+            <div class="plan-title">پلن رایگان (تست)</div>
+            <div class="plan-price">رایگان</div>
+            <ul class="features-list">
+                <li>۳ استفاده رایگان</li>
+                <li>امکان تست سرویس</li>
+            </ul>
+            <form action="/create_payment" method="post">
+                <input type="hidden" name="plan_id" value="free">
+                <button type="submit" class="buy-btn">انتخاب این پلن</button>
+            </form>
         </div>
         <div class="plan-card">
-            <div class="plan-title">سه ماهه</div>
+            <div class="plan-title">پلن ۳ ماهه حرفه‌ای</div>
             <div class="plan-price">۳ دلار</div>
-            <button class="buy-btn" onclick="alert('پرداخت سه‌ماهه ۳ دلاری (قابل تمدید)')">خرید</button>
-        </div>
-        <div class="plan-card">
-            <div class="plan-title">یک ساله</div>
-            <div class="plan-price">۹۰ دلار</div>
-            <button class="buy-btn" onclick="alert('پرداخت سالانه (نمونه)')">خرید</button>
+            <ul class="features-list">
+                <li>استفاده نامحدود</li>
+                <li>پشتیبانی ویژه</li>
+                <li>اعتبار ۳ ماهه</li>
+            </ul>
+            <form action="/create_payment" method="post">
+                <input type="hidden" name="plan_id" value="pro">
+                <button type="submit" class="buy-btn">خرید این پلن</button>
+            </form>
         </div>
     </div>
 </body>
