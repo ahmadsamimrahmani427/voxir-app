@@ -1,45 +1,39 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <title>خوش آمدید | Voxir</title>
+    <meta charset="UTF-8" />
+    <title>خوش آمدید</title>
     <style>
         body {
             background-color: #121212;
-            color: white;
+            color: #eee;
             font-family: Tahoma, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
+            margin: 0; padding: 0;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
             height: 100vh;
-            margin: 0;
         }
         h1 {
-            color: #00bcd4;
-            font-size: 2.2em;
+            font-size: 3em;
+            margin-bottom: 20px;
+            color: #3da6ff;
         }
-        p {
-            margin-top: 15px;
-            font-size: 1.2em;
-        }
-        a.button {
-            background-color: #00bcd4;
-            color: white;
-            padding: 12px 24px;
-            border-radius: 8px;
+        a {
+            color: #3da6ff;
             text-decoration: none;
-            font-weight: bold;
-            margin-top: 30px;
+            font-size: 1.2em;
+            border: 2px solid #3da6ff;
+            padding: 10px 20px;
+            border-radius: 40px;
+            transition: background-color 0.3s ease;
         }
-        a.button:hover {
-            background-color: #0097a7;
+        a:hover {
+            background-color: #3da6ff;
+            color: #121212;
         }
     </style>
 </head>
 <body>
-    <h1>به اپلیکیشن Voxir خوش آمدید</h1>
-    <p>لطفاً برای ادامه وارد حساب کاربری خود شوید.</p>
-    <a href="/login" class="button">ورود به حساب</a>
+    <h1>به سرویس تبدیل متن به گفتار خوش آمدید</h1>
+    <a href="{{ url_for('login') }}">ورود / ثبت‌نام</a>
 </body>
 </html>
