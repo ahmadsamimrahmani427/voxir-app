@@ -1,18 +1,45 @@
 <!DOCTYPE html>
-<html lang="fa">
+<html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8" />
-    <title>خوش آمدید - Voxir</title>
+    <title>خوش‌آمدید | Voxir</title>
     <style>
-        body { font-family: Tahoma, sans-serif; text-align: center; padding: 50px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
-        h1 { font-size: 3em; margin-bottom: 20px; }
-        a.button { background: #fff; color: #764ba2; padding: 15px 30px; text-decoration: none; font-weight: bold; border-radius: 10px; }
-        a.button:hover { background: #f3f3f3; }
+        body {
+            background-color: #111;
+            color: white;
+            font-family: Tahoma, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            height: 100vh;
+            margin: 0;
+            text-align: center;
+        }
+        h1 {
+            color: #00bcd4;
+            margin-bottom: 20px;
+        }
+        p {
+            color: #ccc;
+            margin-bottom: 40px;
+        }
+        a {
+            background-color: #00bcd4;
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: background 0.3s ease;
+        }
+        a:hover {
+            background-color: #0097a7;
+        }
     </style>
 </head>
 <body>
-    <h1>خوش آمدید به Voxir</h1>
-    <p>یک سرویس تبدیل متن به گفتار با کیفیت بالا</p>
-    <a href="{{ url_for('login') }}" class="button">ورود / ثبت نام</a>
+    <h1>به Voxir خوش آمدید</h1>
+    <p>تبدیل متن به صدای طبیعی با پشتیبانی از چند زبان</p>
+    <a href="/login">ورود به اپلیکیشن</a>
 </body>
 </html>
