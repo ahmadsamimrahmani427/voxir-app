@@ -1,7 +1,7 @@
 body {
     font-family: 'Tahoma', sans-serif;
-    background-color: #f2f2f2;
-    color: #333;
+    background-color: #000000; /* بک‌گراند مشکی */
+    color: #ffffff; /* متن سفید */
     direction: rtl;
     text-align: center;
     padding: 20px;
@@ -16,11 +16,12 @@ body {
     width: 100px;
     height: auto;
     margin-bottom: 10px;
+    filter: brightness(0) invert(1); /* اگر لوگو سیاه است، این خط آن را سفید می‌کند */
 }
 
 h1 {
     margin: 0;
-    color: #2c3e50;
+    color: #00aaff; /* رنگ آبی تیتر */
 }
 
 .container {
@@ -33,20 +34,25 @@ textarea {
     margin-bottom: 10px;
     padding: 10px;
     font-size: 16px;
-    border: 1px solid #ccc;
+    border: 1px solid #00aaff; /* حاشیه آبی */
     border-radius: 10px;
+    background-color: #111111; /* پس‌زمینه تیره */
+    color: white;
 }
 
 select {
     padding: 8px;
     margin-bottom: 10px;
     border-radius: 8px;
+    background-color: #111111; /* پس‌زمینه تیره */
+    color: white;
+    border: 1px solid #00aaff; /* حاشیه آبی */
 }
 
 button {
     padding: 10px 20px;
     margin: 5px;
-    background-color: #2c3e50;
+    background-color: #00aaff; /* دکمه آبی */
     color: white;
     border: none;
     border-radius: 8px;
@@ -55,12 +61,12 @@ button {
 }
 
 button:hover {
-    background-color: #34495e;
+    background-color: #0077cc; /* آبی تیره‌تر هنگام هاور */
 }
 
 .login-button, .logout-button {
     display: inline-block;
-    background-color: #27ae60;
+    background-color: #005f99; /* آبی تیره‌تر */
     color: white;
     padding: 8px 16px;
     margin: 10px;
@@ -69,7 +75,7 @@ button:hover {
 }
 
 .login-button:hover, .logout-button:hover {
-    background-color: #2ecc71;
+    background-color: #007acc; /* آبی روشن‌تر هنگام هاور */
 }
 
 .welcome {
@@ -84,7 +90,7 @@ section.plans-section {
 section.plans-section h2 {
     text-align: center;
     margin-bottom: 30px;
-    color: #2c3e50;
+    color: #00aaff; /* تیتر بخش پلن‌ها آبی */
 }
 
 .plans {
@@ -95,29 +101,30 @@ section.plans-section h2 {
 }
 
 .plan {
-    background: white;
+    background: #111111; /* پس‌زمینه کارت‌ها تیره */
     border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 8px rgba(0, 170, 255, 0.3);
     padding: 20px;
     width: 250px;
     text-align: center;
     transition: transform 0.2s ease;
+    color: white;
 }
 
 .plan:hover {
     transform: translateY(-8px);
-    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+    box-shadow: 0 6px 20px rgba(0, 170, 255, 0.6);
 }
 
 .plan h3 {
     margin-bottom: 15px;
-    color: #2c3e50;
+    color: #00aaff; /* عنوان کارت‌ها آبی */
 }
 
 .price {
     font-size: 28px;
     font-weight: bold;
-    color: #27ae60;
+    color: #00aaff; /* قیمت آبی */
     margin-bottom: 15px;
 }
 
@@ -125,7 +132,7 @@ section.plans-section h2 {
     list-style: none;
     padding: 0;
     margin-bottom: 20px;
-    color: #555;
+    color: #ccc; /* متن ویژگی‌ها روشن */
     text-align: right;
 }
 
@@ -134,7 +141,7 @@ section.plans-section h2 {
 }
 
 .btn-subscribe {
-    background-color: #27ae60;
+    background-color: #00aaff; /* دکمه اشتراک آبی */
     color: white;
     padding: 12px 25px;
     border: none;
@@ -145,5 +152,5 @@ section.plans-section h2 {
 }
 
 .btn-subscribe:hover {
-    background-color: #219150;
+    background-color: #0077cc; /* هاور آبی تیره */
 }
