@@ -1,109 +1,72 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
-    <meta charset="UTF-8" />
-    <title>ورود به Voxir</title>
+    <meta charset="UTF-8">
+    <title>ورود به حساب | Voxir</title>
     <style>
         body {
+            background-color: #121212;
+            color: white;
             font-family: Tahoma, sans-serif;
-            background-color: #121212;  /* پس‌زمینه سیاه */
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
             margin: 0;
-            color: white;
-            direction: rtl;
         }
-        .container {
-            background: #1e1e1e; /* رنگ پس‌زمینه تیره‌تر برای فرم */
-            padding: 40px;
-            border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.8);
-            width: 320px;
-            text-align: center;
+        .login-box {
+            background-color: #1f1f1f;
+            padding: 30px;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 0 10px #00bcd4;
         }
         h2 {
-            margin-bottom: 30px;
-            color: #5dade2; /* آبی روشن */
+            text-align: center;
+            margin-bottom: 20px;
+            color: #00bcd4;
         }
         input[type="email"], input[type="password"] {
             width: 100%;
-            padding: 12px;
-            margin-bottom: 20px;
-            border: 1px solid #5dade2; /* حاشیه آبی */
+            padding: 10px;
+            margin: 10px 0;
+            background-color: #333;
+            border: none;
             border-radius: 6px;
-            background: #121212; /* زمینه مشکی */
             color: white;
-            font-size: 1em;
-        }
-        input::placeholder {
-            color: #a0a0a0;
         }
         button {
-            background: #5dade2; /* آبی */
-            color: white;
-            border: none;
-            padding: 12px 0;
             width: 100%;
-            font-size: 1em;
+            padding: 12px;
+            background-color: #00bcd4;
+            border: none;
             border-radius: 6px;
+            color: white;
+            font-weight: bold;
             cursor: pointer;
-            transition: background-color 0.3s ease;
+            transition: background 0.3s ease;
         }
         button:hover {
-            background: #3498db; /* آبی روشن‌تر */
-        }
-        .error {
-            color: #e74c3c; /* قرمز */
-            margin-bottom: 15px;
-        }
-        .oauth-btn {
-            margin-top: 15px;
-            padding: 10px;
-            border-radius: 6px;
-            color: white;
-            text-decoration: none;
-            display: block;
-            font-weight: bold;
-            transition: background-color 0.3s ease;
+            background-color: #0097a7;
         }
         .google-btn {
-            background: #4285F4; /* آبی گوگل */
-        }
-        .google-btn:hover {
-            background: #357ae8;
-        }
-        .logo {
-            font-size: 2em;
-            font-weight: bold;
-            color: #5dade2; /* آبی */
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-        .logo i {
-            color: white; /* آیکون سفید */
-            font-size: 1.5em;
+            margin-top: 15px;
+            background-color: #4285f4;
         }
     </style>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 </head>
 <body>
-    <div class="container">
-        <div class="logo"><i class="fa-solid fa-microphone"></i>Voxir</div>
-        <h2>ورود به حساب کاربری</h2>
-        {% if error %}
-        <div class="error">{{ error }}</div>
-        {% endif %}
-        <form method="POST" action="{{ url_for('login') }}">
-            <input type="email" name="email" placeholder="ایمیل" required />
-            <input type="password" name="password" placeholder="رمز عبور" required />
+    <div class="login-box">
+        <h2>ورود به Voxir</h2>
+        <form method="POST">
+            <input type="email" name="email" placeholder="ایمیل شما" required>
+            <input type="password" name="password" placeholder="رمز عبور" required>
             <button type="submit">ورود</button>
         </form>
-        <a class="oauth-btn google-btn" href="{{ url_for('google.login') }}">ورود با گوگل</a>
+        <a href="/login/google" style="text-decoration: none;">
+            <button class="google-btn">ورود با حساب گوگل</button>
+        </a>
     </div>
 </body>
 </html>
