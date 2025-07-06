@@ -8,60 +8,11 @@ import paypalrestsdk  # اضافه شد
 app = Flask(__name__)
 app.secret_key = "your-secret-key"
 
-GOOGLE_CLIENT_ID = "@app.route('/create_payment', methods=['POST'])
-def create_payment():
-    if not is_logged_in():
-        return redirect(url_for("login"))
-
-    plan_id = request.form.get("plan_id")
-    if plan_id not in ["free", "pro"]:
-        return "پلن نامعتبر است", 400
-
-    if plan_id == "free":
-        return redirect(url_for("app_main"))
-
-    # قیمت پلن حرفه‌ای تغییر داده شده به ۳ دلار
-    amount = "3.00"
-
-    payment = paypalrestsdk.Payment({
-        "intent": "sale",
-        "payer": {
-            "payment_method": "paypal"
-        },
-        "redirect_urls": {
-            "return_url": url_for('payment_execute', _external=True),
-            "cancel_url": url_for('payment_cancel', _external=True)
-        },
-        "transactions": [{
-            "item_list": {
-                "items": [{
-                    "name": "پلن ۳ ماهه حرفه‌ای",
-                    "sku": plan_id,
-                    "price": amount,
-                    "currency": "USD",
-                    "quantity": 1
-                }]
-            },
-            "amount": {
-                "total": amount,
-                "currency": "USD"
-            },
-            "description": "خرید پلن ۳ ماهه حرفه‌ای"
-        }]
-    })
-
-    if payment.create():
-        for link in payment.links:
-            if link.rel == "approval_url":
-                return redirect(link.href)
-        return "خطا در دریافت لینک پرداخت", 500
-    else:
-        return f"خطا در ساخت پرداخت: {payment.error}", 500
--vu682l6h78vlc1ab1gh3jq0ffjlmrugo.apps.googleusercontent.com"
+GOOGLE_CLIENT_ID = "786899786922-vu682l6h78vlc1ab1gh3jq0ffjlmrugo.apps.googleusercontent.com"
 GOOGLE_CLIENT_SECRET = "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"
 
 paypalrestsdk.configure({
-    "mode": "sandbox",  # "live" برای حالت واقعی
+    "mode": "sandbox",
     "client_id": "AVOqX9uegnvQoz6cpoxezjEhv_P1ljaHCq1tt_xSSg_DtEP976IaMzsjGf5OGdttuYUawR21q1H0L2cE",
     "client_secret": "EH_IHMgTO6hOFa13s4PxWE5vhAiLhT-zWpVAl5kAvp4S_iNDK1E9fq1lQF7ASH-a2cTlNTP40OsZm1_j"
 })
@@ -123,7 +74,7 @@ def app_main():
     free_uses = 1
     plans = [
         {"name": "پلن رایگان", "price": "رایگان", "features": ["۳ استفاده رایگان"], "id": "free"},
-        {"name": "پلن ۳ ماهه حرفه‌ای", "price": "۲۰ دلار", "features": ["استفاده نامحدود", "پشتیبانی ویژه"], "id": "pro"},
+        {"name": "پلن ۳ ماهه حرفه‌ای", "price": "۳ دلار", "features": ["استفاده نامحدود", "پشتیبانی ویژه"], "id": "pro"},
     ]
     return render_template(
         "index.html",
@@ -145,8 +96,8 @@ def create_payment():
     if plan_id == "free":
         return redirect(url_for("app_main"))
 
-    # قیمت پلن حرفه‌ای
-    amount = "20.00"
+    # قیمت پلن حرفه‌ای (تغییر یافته به ۳ دلار)
+    amount = "3.00"
 
     payment = paypalrestsdk.Payment({
         "intent": "sale",
@@ -191,8 +142,6 @@ def payment_execute():
     payment = paypalrestsdk.Payment.find(payment_id)
 
     if payment.execute({"payer_id": payer_id}):
-        # پرداخت موفق
-        # اینجا می‌توانید کارهای لازم برای فعال کردن پلن را انجام دهید
         return "پرداخت با موفقیت انجام شد. متشکریم!"
     else:
         return f"خطا در تایید پرداخت: {payment.error}", 400
