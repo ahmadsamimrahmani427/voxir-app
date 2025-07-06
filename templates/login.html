@@ -2,80 +2,108 @@
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8" />
-    <title>پلن‌های اشتراک | {{ app_name }}</title>
+    <title>ورود به Voxir</title>
     <style>
         body {
             font-family: Tahoma, sans-serif;
-            background: #f0f0f7;
-            direction: rtl;
-            margin: 0;
-            padding: 20px;
-        }
-        h1 {
-            color: #5a2a83;
-            text-align: center;
-            margin-bottom: 40px;
-        }
-        .plans-container {
-            max-width: 600px;
-            margin: auto;
+            background-color: #121212;  /* پس‌زمینه سیاه */
             display: flex;
-            justify-content: space-around;
-            gap: 20px;
-            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            color: white;
+            direction: rtl;
         }
-        .plan-card {
-            background: white;
+        .container {
+            background: #1e1e1e; /* رنگ پس‌زمینه تیره‌تر برای فرم */
+            padding: 40px;
             border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 4px 10px rgba(90, 42, 131, 0.2);
-            width: 180px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.8);
+            width: 320px;
             text-align: center;
         }
-        .plan-title {
-            font-weight: bold;
-            font-size: 1.4em;
-            margin-bottom: 15px;
-            color: #5a2a83;
+        h2 {
+            margin-bottom: 30px;
+            color: #5dade2; /* آبی روشن */
         }
-        .plan-price {
-            font-size: 1.2em;
+        input[type="email"], input[type="password"] {
+            width: 100%;
+            padding: 12px;
             margin-bottom: 20px;
-            color: #8237b5;
+            border: 1px solid #5dade2; /* حاشیه آبی */
+            border-radius: 6px;
+            background: #121212; /* زمینه مشکی */
+            color: white;
+            font-size: 1em;
         }
-        .buy-btn {
-            background: #5a2a83;
+        input::placeholder {
+            color: #a0a0a0;
+        }
+        button {
+            background: #5dade2; /* آبی */
             color: white;
             border: none;
-            padding: 12px 20px;
-            border-radius: 40px;
+            padding: 12px 0;
+            width: 100%;
+            font-size: 1em;
+            border-radius: 6px;
             cursor: pointer;
-            font-weight: bold;
-            transition: background 0.3s ease;
+            transition: background-color 0.3s ease;
         }
-        .buy-btn:hover {
-            background: #7a44a1;
+        button:hover {
+            background: #3498db; /* آبی روشن‌تر */
+        }
+        .error {
+            color: #e74c3c; /* قرمز */
+            margin-bottom: 15px;
+        }
+        .oauth-btn {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 6px;
+            color: white;
+            text-decoration: none;
+            display: block;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+        }
+        .google-btn {
+            background: #4285F4; /* آبی گوگل */
+        }
+        .google-btn:hover {
+            background: #357ae8;
+        }
+        .logo {
+            font-size: 2em;
+            font-weight: bold;
+            color: #5dade2; /* آبی */
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .logo i {
+            color: white; /* آیکون سفید */
+            font-size: 1.5em;
         }
     </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 </head>
 <body>
-    <h1>پلن‌های اشتراک</h1>
-    <div class="plans-container">
-        <div class="plan-card">
-            <div class="plan-title">یک ماهه</div>
-            <div class="plan-price">۱۰ دلار</div>
-            <button class="buy-btn" onclick="alert('پرداخت ماهانه (نمونه)')">خرید</button>
-        </div>
-        <div class="plan-card">
-            <div class="plan-title">سه ماهه</div>
-            <div class="plan-price">۳ دلار</div>
-            <button class="buy-btn" onclick="alert('پرداخت سه‌ماهه ۳ دلاری (قابل تمدید)')">خرید</button>
-        </div>
-        <div class="plan-card">
-            <div class="plan-title">یک ساله</div>
-            <div class="plan-price">۹۰ دلار</div>
-            <button class="buy-btn" onclick="alert('پرداخت سالانه (نمونه)')">خرید</button>
-        </div>
+    <div class="container">
+        <div class="logo"><i class="fa-solid fa-microphone"></i>Voxir</div>
+        <h2>ورود به حساب کاربری</h2>
+        {% if error %}
+        <div class="error">{{ error }}</div>
+        {% endif %}
+        <form method="POST" action="{{ url_for('login') }}">
+            <input type="email" name="email" placeholder="ایمیل" required />
+            <input type="password" name="password" placeholder="رمز عبور" required />
+            <button type="submit">ورود</button>
+        </form>
+        <a class="oauth-btn google-btn" href="{{ url_for('google.login') }}">ورود با گوگل</a>
     </div>
 </body>
 </html>
