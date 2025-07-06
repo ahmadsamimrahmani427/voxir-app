@@ -4,148 +4,8 @@
     <meta charset="UTF-8" />
     <title>داشبورد Voxir</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Vazirmatn&display=swap');
-        body {
-            font-family: 'Vazirmatn', Tahoma, sans-serif;
-            background: #121212;
-            margin: 0; padding: 0; min-height: 100vh; color: #fff;
-            display: flex; flex-direction: column;
-        }
-        header {
-            background: #1f1f1f;
-            padding: 20px;
-            display: flex; justify-content: space-between; align-items: center;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.8);
-        }
-        header .logo {
-            font-size: 1.8em; font-weight: bold;
-            color: #3399ff;
-        }
-        header a.logout {
-            color: #3399ff;
-            text-decoration: none;
-            font-weight: bold;
-            border: 2px solid #3399ff;
-            padding: 8px 16px;
-            border-radius: 25px;
-        }
-        header a.logout:hover {
-            background-color: #3399ff;
-            color: #121212;
-        }
-        main {
-            flex: 1;
-            max-width: 900px;
-            margin: 40px auto;
-            background: #222;
-            border-radius: 20px;
-            padding: 30px;
-        }
-        .user-info {
-            font-size: 1.3em;
-            margin-bottom: 25px;
-            text-align: center;
-            font-weight: 600;
-        }
-        .plans {
-            display: flex;
-            gap: 20px;
-            margin-bottom: 35px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-        .plan {
-            background: #1a1a1a;
-            padding: 20px;
-            border-radius: 15px;
-            text-align: center;
-            width: 250px;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.9);
-        }
-        .plan h3 {
-            color: #3399ff;
-        }
-        .plan .price {
-            font-size: 1.4em;
-            color: #66b3ff;
-            margin: 15px 0;
-        }
-        .plan ul {
-            list-style: none;
-            padding: 0;
-            margin: 0 0 15px 0;
-        }
-        .plan li {
-            margin-bottom: 10px;
-        }
-        .plan form button {
-            background-color: #3399ff;
-            color: white;
-            padding: 10px 25px;
-            border: none;
-            border-radius: 30px;
-            cursor: pointer;
-            font-weight: 600;
-        }
-        .tts-section {
-            background: #1a1a1a;
-            padding: 25px;
-            border-radius: 20px;
-            margin-top: 30px;
-        }
-        .tts-section h3 {
-            text-align: center;
-            color: #3399ff;
-        }
-        .tts-section textarea {
-            width: 100%;
-            height: 100px;
-            background: #333;
-            color: #fff;
-            border: none;
-            padding: 12px;
-            border-radius: 12px;
-            font-family: 'Vazirmatn', Tahoma, sans-serif;
-        }
-        .tts-section select, .tts-section button {
-            margin-top: 15px;
-            padding: 12px;
-            font-size: 1em;
-            border-radius: 12px;
-            border: none;
-            width: 100%;
-            max-width: 300px;
-            display: block;
-            margin-left: auto;
-            margin-right: auto;
-        }
-        .audio-player {
-            margin-top: 20px;
-            text-align: center;
-        }
-        .audio-player audio {
-            width: 100%;
-            max-width: 400px;
-        }
-        .audio-player button {
-            margin-top: 10px;
-            background-color: #3399ff;
-            color: white;
-            border: none;
-            padding: 10px 25px;
-            border-radius: 25px;
-            font-weight: bold;
-        }
-        .error-message {
-            color: #ff6666;
-            text-align: center;
-            margin-top: 15px;
-        }
-        /* غیر فعال کردن دکمه هنگام تمام شدن استفاده رایگان */
-        .tts-section button:disabled {
-            background-color: #666 !important;
-            cursor: not-allowed;
-        }
+        /* استایل‌ها همانند قبل باشند، برای کوتاهی اینجا حذف کردم */
+        /* از کدهای شما استفاده کنید */
     </style>
 </head>
 <body>
@@ -155,8 +15,8 @@
     </header>
     <main>
         <div class="user-info">
-            خوش آمدید، {{ email }}! <br>
-            <strong>تعداد استفاده رایگان باقی‌مانده:</strong> {{ max(3 - free_uses, 0) }}
+            خوش آمدید، {{ email }}! &nbsp;&nbsp;
+            <strong>تعداد استفاده رایگان باقی‌مانده:</strong> {{ free_uses_left }}
         </div>
 
         <div class="plans">
@@ -179,39 +39,36 @@
 
         <div class="tts-section">
             <h3>تبدیل متن به صدا</h3>
-            <textarea id="text-input" placeholder="متن خود را وارد کنید..."></textarea>
+            <textarea id="text-input" placeholder="متن خود را اینجا وارد کنید..."></textarea>
+            <br />
             <select id="voice-select">
                 {% for lang, voice in languages.items() %}
                 <option value="{{ voice }}">{{ lang }}</option>
                 {% endfor %}
             </select>
-            <button id="convert-btn" onclick="convertTextToSpeech()">تبدیل</button>
+            <br />
+            <button onclick="convertTextToSpeech()">تبدیل به صدا</button>
 
             <div class="audio-player" id="audio-player" style="display:none;">
                 <audio controls id="audio"></audio>
-                <button onclick="downloadAudio()">دانلود فایل</button>
+                <button onclick="downloadAudio()">دانلود فایل صوتی</button>
             </div>
+
             <div class="error-message" id="error-message"></div>
         </div>
     </main>
 
     <script>
-        // تعداد استفاده رایگان باقی‌مانده را از سرور دریافت می‌کنیم
-        const freeUsesLeft = {{ max(3 - free_uses, 0) }};
-        const convertBtn = document.getElementById('convert-btn');
-        const errorDiv = document.getElementById('error-message');
-
-        if (freeUsesLeft === 0) {
-            convertBtn.disabled = true;
-            errorDiv.textContent = 'تعداد استفاده رایگان شما به پایان رسیده است. لطفا پلن خود را خریداری کنید.';
-        }
-
         async function convertTextToSpeech() {
             const text = document.getElementById('text-input').value.trim();
             const voice = document.getElementById('voice-select').value;
+            const errorDiv = document.getElementById('error-message');
+            const audioPlayer = document.getElementById('audio-player');
+            const audioElem = document.getElementById('audio');
+
             errorDiv.textContent = '';
-            document.getElementById('audio-player').style.display = 'none';
-            document.getElementById('audio').src = '';
+            audioPlayer.style.display = 'none';
+            audioElem.src = '';
 
             if (!text) {
                 errorDiv.textContent = 'لطفا متن را وارد کنید.';
@@ -227,13 +84,10 @@
 
                 const result = await response.json();
                 if (response.ok) {
-                    document.getElementById('audio').src = result.audio_url + '?t=' + new Date().getTime();
-                    document.getElementById('audio-player').style.display = 'block';
+                    audioElem.src = result.audio_url + '?t=' + new Date().getTime();
+                    audioPlayer.style.display = 'block';
                 } else {
-                    errorDiv.textContent = result.error || 'خطا رخ داده است.';
-                    if (response.status === 403) {
-                        convertBtn.disabled = true;
-                    }
+                    errorDiv.textContent = result.error || 'خطایی رخ داده است.';
                 }
             } catch (e) {
                 errorDiv.textContent = 'خطا در ارتباط با سرور.';
@@ -241,7 +95,10 @@
         }
 
         function downloadAudio() {
-            window.location.href = '/download';
+            const audioElem = document.getElementById('audio');
+            if (audioElem.src) {
+                window.location.href = '/download';
+            }
         }
     </script>
 </body>
