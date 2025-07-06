@@ -2,7 +2,7 @@
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8" />
-    <title>پلن‌های اشتراک | {{ email }}</title>
+    <title>تبدیل متن به گفتار | {{ email }}</title>
     <style>
         body {
             background-color: #121212;
@@ -12,71 +12,78 @@
             padding: 20px;
             direction: rtl;
         }
-        h1 {
-            text-align: center;
+        h1, h2 {
             color: #0af;
-            margin-bottom: 30px;
+            text-align: center;
         }
-        .plans-container {
-            max-width: 700px;
+        .container {
+            max-width: 720px;
             margin: auto;
-            display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-        .plan-card {
             background-color: #1f1f1f;
+            padding: 30px;
             border-radius: 15px;
-            box-shadow: 0 0 10px #0af;
-            width: 220px;
-            padding: 25px;
-            text-align: center;
-            transition: transform 0.3s ease;
+            box-shadow: 0 0 20px #0af;
         }
-        .plan-card:hover {
-            transform: scale(1.05);
-        }
-        .plan-title {
-            font-size: 1.6em;
-            font-weight: bold;
+        label {
+            display: block;
             margin-bottom: 10px;
-            color: #0af;
-        }
-        .plan-price {
-            font-size: 1.3em;
-            margin-bottom: 20px;
+            font-weight: bold;
             color: #aaf;
         }
-        ul.features {
-            list-style: none;
-            padding: 0;
-            margin-bottom: 20px;
-            color: #ccc;
-            min-height: 60px;
-        }
-        ul.features li::before {
-            content: "✔️";
-            margin-left: 8px;
-            color: #0af;
-        }
-        form {
-            margin: 0;
-        }
-        button.buy-btn {
-            background-color: #0af;
+        textarea {
+            width: 100%;
+            height: 150px;
+            padding: 12px;
+            font-size: 1.1em;
+            border-radius: 10px;
             border: none;
-            color: white;
-            padding: 12px 25px;
+            resize: vertical;
+            background-color: #121212;
+            color: #eee;
+        }
+        select {
+            margin-top: 15px;
+            padding: 8px;
             font-size: 1em;
+            border-radius: 8px;
+            border: none;
+            background-color: #121212;
+            color: #eee;
+        }
+        button {
+            margin-top: 20px;
+            background-color: #0af;
+            color: white;
+            border: none;
+            padding: 14px 25px;
+            font-size: 1.2em;
             border-radius: 40px;
             cursor: pointer;
             font-weight: bold;
             width: 100%;
             transition: background-color 0.3s ease;
         }
-        button.buy-btn:hover {
+        button:hover {
             background-color: #08a;
+        }
+        audio {
+            margin-top: 25px;
+            width: 100%;
+            outline: none;
+            border-radius: 10px;
+            background-color: #121212;
+            box-shadow: 0 0 10px #0af;
+        }
+        .download-link {
+            display: block;
+            margin-top: 15px;
+            text-align: center;
+            font-weight: bold;
+            color: #0af;
+            text-decoration: none;
+        }
+        .download-link:hover {
+            text-decoration: underline;
         }
         .user-info {
             text-align: center;
@@ -92,6 +99,62 @@
         a.logout-link:hover {
             text-decoration: underline;
         }
+        .plans-container {
+            margin-top: 40px;
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+        .plan-card {
+            background: #222;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 0 15px #0af;
+            width: 220px;
+            text-align: center;
+            color: #eee;
+            transition: box-shadow 0.3s ease;
+        }
+        .plan-card:hover {
+            box-shadow: 0 0 30px #08a;
+        }
+        .plan-title {
+            font-weight: bold;
+            font-size: 1.4em;
+            margin-bottom: 15px;
+            color: #0af;
+        }
+        .plan-price {
+            font-size: 1.2em;
+            margin-bottom: 15px;
+            color: #66c0ff;
+        }
+        .plan-features {
+            list-style: none;
+            padding: 0;
+            margin-bottom: 20px;
+            color: #aad4ff;
+            min-height: 70px;
+        }
+        .buy-btn {
+            background: #0af;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 40px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s ease;
+            width: 100%;
+        }
+        .buy-btn:hover {
+            background: #08a;
+        }
+        .buy-btn:disabled {
+            background: #444;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
@@ -100,24 +163,93 @@
         <a href="{{ url_for('logout') }}" class="logout-link">خروج</a>
     </div>
 
-    <h1>پلن‌های اشتراک</h1>
+    <h1>تبدیل متن به گفتار</h1>
 
-    <div class="plans-container">
-        {% for plan in plans %}
-        <div class="plan-card">
-            <div class="plan-title">{{ plan.name }}</div>
-            <div class="plan-price">{{ plan.price }}</div>
-            <ul class="features">
-                {% for feature in plan.features %}
-                <li>{{ feature }}</li>
+    <div class="container">
+        <form id="tts-form">
+            <label for="text">متن خود را وارد کنید:</label>
+            <textarea id="text" name="text" required></textarea>
+
+            <label for="voice">انتخاب زبان / صدا:</label>
+            <select id="voice" name="voice">
+                {% for name, voice_code in languages.items() %}
+                <option value="{{ voice_code }}">{{ name }}</option>
                 {% endfor %}
-            </ul>
-            <form method="POST" action="{{ url_for('create_payment') }}">
-                <input type="hidden" name="plan_id" value="{{ plan.id }}">
-                <button type="submit" class="buy-btn" aria-label="خرید {{ plan.name }}">خرید</button>
-            </form>
+            </select>
+
+            <button type="submit">تبدیل به صدا</button>
+        </form>
+
+        <audio id="audio-player" controls style="display:none;"></audio>
+        <a id="download-link" class="download-link" href="#" download="output.mp3" style="display:none;">دانلود فایل صوتی</a>
+
+        <div class="plans-container">
+            {% for plan in plans %}
+            <div class="plan-card">
+                <div class="plan-title">{{ plan.name }}</div>
+                <div class="plan-price">{{ plan.price }}</div>
+                <ul class="plan-features">
+                    {% for feat in plan.features %}
+                    <li>• {{ feat }}</li>
+                    {% endfor %}
+                </ul>
+                <form method="POST" action="{{ url_for('create_payment') }}">
+                    <input type="hidden" name="plan_id" value="{{ plan.id }}" />
+                    <button type="submit" class="buy-btn"
+                        {% if plan.id == 'free' and free_uses <= 0 %}disabled title="استفاده رایگان به پایان رسیده"{% endif %}>
+                        خرید / استفاده
+                    </button>
+                </form>
+            </div>
+            {% endfor %}
         </div>
-        {% endfor %}
     </div>
+
+    <script>
+        const form = document.getElementById('tts-form');
+        const audioPlayer = document.getElementById('audio-player');
+        const downloadLink = document.getElementById('download-link');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            audioPlayer.style.display = 'none';
+            downloadLink.style.display = 'none';
+
+            const text = form.text.value.trim();
+            const voice = form.voice.value;
+
+            if (!text) {
+                alert('لطفا متن را وارد کنید.');
+                return;
+            }
+
+            try {
+                const response = await fetch('/tts', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({text, voice})
+                });
+
+                if (!response.ok) {
+                    const err = await response.json();
+                    alert(err.error || 'خطا در تبدیل متن به صدا');
+                    return;
+                }
+
+                const data = await response.json();
+                const audioUrl = data.audio_url;
+
+                audioPlayer.src = audioUrl + '?t=' + new Date().getTime();
+                audioPlayer.style.display = 'block';
+                audioPlayer.play();
+
+                downloadLink.href = audioUrl + '?t=' + new Date().getTime();
+                downloadLink.style.display = 'block';
+            } catch (error) {
+                alert('خطا در ارتباط با سرور.');
+                console.error(error);
+            }
+        });
+    </script>
 </body>
 </html>
