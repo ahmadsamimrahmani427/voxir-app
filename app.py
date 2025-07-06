@@ -1,89 +1,3 @@
-from flask import Flask, render_template, redirect, url_for, request, session, send_file
-from flask_dance.contrib.google import make_google_blueprint, google
-import edge_tts
-import asyncio
-import os
-import paypalrestsdk  # اضافه شد
-
-app = Flask(__name__)
-app.secret_key = "your-secret-key"
-
-GOOGLE_CLIENT_ID = "786899786922-vu682l6h78vlc1ab1gh3jq0ffjlmrugo.apps.googleusercontent.com"
-GOOGLE_CLIENT_SECRET = "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"
-
-paypalrestsdk.configure({
-    "mode": "sandbox",  # "live" برای حالت واقعی
-    "client_id": "AVOqX9uegnvQoz6cpoxezjEhv_P1ljaHCq1tt_xSSg_DtEP976IaMzsjGf5OGdttuYUawR21q1H0L2cE",
-    "client_secret": "EH_IHMgTO6hOFa13s4PxWE5vhAiLhT-zWpVAl5kAvp4S_iNDK1E9fq1lQF7ASH-a2cTlNTP40OsZm1_j"
-})
-
-google_bp = make_google_blueprint(
-    client_id=GOOGLE_CLIENT_ID,
-    client_secret=GOOGLE_CLIENT_SECRET,
-    scope=["profile", "email"],
-    redirect_url="/login/google/authorized"
-)
-app.register_blueprint(google_bp, url_prefix="/login")
-
-LANGUAGES = {
-    "فارسی": "fa-IR-DilaraNeural",
-    "انگلیسی": "en-US-AriaNeural",
-    "آلمانی": "de-DE-KatjaNeural",
-    "فرانسوی": "fr-FR-DeniseNeural",
-    "اسپانیایی": "es-ES-ElviraNeural"
-}
-
-def is_logged_in():
-    return google.authorized or session.get("email")
-
-@app.context_processor
-def inject_google():
-    return dict(google=google)
-
-@app.route('/')
-def welcome():
-    return render_template("welcome.html")
-
-@app.route('/login', methods=["GET", "POST"])
-def login():
-    if request.method == "POST":
-        email = request.form.get("email")
-        password = request.form.get("password")
-        if email and password:
-            session["email"] = email
-            return redirect(url_for("app_main"))
-
-    if google.authorized:
-        resp = google.get("/oauth2/v2/userinfo")
-        if resp.ok:
-            session["email"] = resp.json().get("email")
-            return redirect(url_for("app_main"))
-
-    return render_template("login.html")
-
-@app.route('/logout')
-def logout():
-    session.clear()
-    return redirect(url_for("welcome"))
-
-@app.route('/app')
-def app_main():
-    if not is_logged_in():
-        return redirect(url_for("login"))
-    email = session.get("email", "کاربر")
-    free_uses = 1
-    plans = [
-        {"name": "پلن رایگان", "price": "رایگان", "features": ["۳ استفاده رایگان"], "id": "free"},
-        {"name": "پلن ۳ ماهه حرفه‌ای", "price": "۳ دلار", "features": ["استفاده نامحدود", "پشتیبانی ویژه"], "id": "pro"},
-    ]
-    return render_template(
-        "index.html",
-        email=email,
-        languages=LANGUAGES,
-        free_uses=free_uses,
-        plans=plans
-    )
-
 @app.route('/create_payment', methods=['POST'])
 def create_payment():
     if not is_logged_in():
@@ -116,3 +30,20 @@ def create_payment():
                     "price": amount,
                     "currency": "USD",
                     "quantity": 1
+                }]
+            },
+            "amount": {
+                "total": amount,
+                "currency": "USD"
+            },
+            "description": "خرید پلن ۳ ماهه حرفه‌ای"
+        }]
+    })
+
+    if payment.create():
+        for link in payment.links:
+            if link.rel == "approval_url":
+                return redirect(link.href)
+        return "خطا در دریافت لینک پرداخت", 500
+    else:
+        return f"خطا در ساخت پرداخت: {payment.error}", 500
