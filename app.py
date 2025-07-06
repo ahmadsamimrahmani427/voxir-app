@@ -8,16 +8,14 @@ import paypalrestsdk
 app = Flask(__name__)
 app.secret_key = "your-secret-key"
 
-# کلیدهای PayPal واقعی
+GOOGLE_CLIENT_ID = "786899786922-vu682l6h78vlc1ab1gh3jq0ffjlmrugo.apps.googleusercontent.com"
+GOOGLE_CLIENT_SECRET = "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"
+
 paypalrestsdk.configure({
-    "mode": "live",
+    "mode": "sandbox",
     "client_id": "BAAPhnx7VkJgKOMM9B-Jowx06XDwRhrIeKIewOZBdKWJtkEDalPgw9vj6xw5Xi21YTIChXHr00JATIbVqY",
     "client_secret": "ECQhDhRs-bMYbcVfOkfqIpS8ZizF5S6YPNRXlRdmbc00u7XfdacA0nXOpPuTbOpiG5Fb6DWGrt0lBZ9S"
 })
-
-# Google Login
-GOOGLE_CLIENT_ID = "786899786922-vu682l6h78vlc1ab1gh3jq0ffjlmrugo.apps.googleusercontent.com"
-GOOGLE_CLIENT_SECRET = "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"
 
 google_bp = make_google_blueprint(
     client_id=GOOGLE_CLIENT_ID,
@@ -27,7 +25,6 @@ google_bp = make_google_blueprint(
 )
 app.register_blueprint(google_bp, url_prefix="/login")
 
-# زبان‌ها
 LANGUAGES = {
     "فارسی": "fa-IR-DilaraNeural",
     "انگلیسی": "en-US-AriaNeural",
@@ -36,7 +33,6 @@ LANGUAGES = {
     "اسپانیایی": "es-ES-ElviraNeural"
 }
 
-# چک لاگین
 def is_logged_in():
     return google.authorized or session.get("email")
 
@@ -75,12 +71,19 @@ def app_main():
     if not is_logged_in():
         return redirect(url_for("login"))
     email = session.get("email", "کاربر")
-    free_uses = 3
+    free_uses = 3  # تعداد استفاده رایگان
     plans = [
         {"name": "پلن رایگان", "price": "رایگان", "features": ["۳ استفاده رایگان"], "id": "free"},
-        {"name": "پلن حرفه‌ای ۳ ماهه", "price": "۳ دلار", "features": ["استفاده نامحدود", "پشتیبانی ویژه"], "id": "pro"},
+        {"name": "پلن ۳ ماهه حرفه‌ای", "price": "۳ دلار", "features": ["استفاده نامحدود", "پشتیبانی ویژه"], "id": "pro"},
     ]
-    return render_template("index.html", email=email, languages=LANGUAGES, free_uses=free_uses, plans=plans)
+    audio_url = "/audio/output.mp3" if os.path.exists("output.mp3") else None
+    return render_template(
+        "plans.html",
+        email=email,
+        free_uses=free_uses,
+        plans=plans,
+        audio_url=audio_url
+    )
 
 @app.route('/create_payment', methods=['POST'])
 def create_payment():
@@ -94,13 +97,11 @@ def create_payment():
     if plan_id == "free":
         return redirect(url_for("app_main"))
 
-    amount = "3.00"  # قیمت پلن حرفه‌ای
+    amount = "3.00"
 
     payment = paypalrestsdk.Payment({
         "intent": "sale",
-        "payer": {
-            "payment_method": "paypal"
-        },
+        "payer": {"payment_method": "paypal"},
         "redirect_urls": {
             "return_url": url_for('payment_execute', _external=True),
             "cancel_url": url_for('payment_cancel', _external=True)
@@ -115,10 +116,7 @@ def create_payment():
                     "quantity": 1
                 }]
             },
-            "amount": {
-                "total": amount,
-                "currency": "USD"
-            },
+            "amount": {"total": amount, "currency": "USD"},
             "description": "خرید پلن ۳ ماهه حرفه‌ای"
         }]
     })
@@ -135,17 +133,17 @@ def create_payment():
 def payment_execute():
     payment_id = request.args.get('paymentId')
     payer_id = request.args.get('PayerID')
+
     payment = paypalrestsdk.Payment.find(payment_id)
 
     if payment.execute({"payer_id": payer_id}):
-        session['pro_user'] = True
-        return "✅ پرداخت با موفقیت انجام شد. اکنون دسترسی حرفه‌ای دارید."
+        return "پرداخت با موفقیت انجام شد. متشکریم!"
     else:
-        return f"❌ خطا در تایید پرداخت: {payment.error}", 400
+        return f"خطا در تایید پرداخت: {payment.error}", 400
 
 @app.route('/payment/cancel')
 def payment_cancel():
-    return "❌ پرداخت لغو شد."
+    return "پرداخت لغو شد."
 
 @app.route('/tts', methods=['POST'])
 def tts():
