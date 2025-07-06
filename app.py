@@ -20,11 +20,11 @@ google_bp = make_google_blueprint(
 )
 app.register_blueprint(google_bp, url_prefix="/login")
 
-# پیکربندی PayPal (Sandbox)
+# پیکربندی PayPal (Live)
 paypalrestsdk.configure({
-    "mode": "sandbox",
-    "client_id": "BAAPhnx7VkJgKOMM9B-Jowx06XDwRhrIeKIewOZBdKWJtkEDalPgw9vj6xw5Xi21YTIChXHr00JATIbVqY",
-    "client_secret": "ECQhDhRs-bMYbcVfOkfqIpS8ZizF5S6YPNRXlRdmbc00u7XfdacA0nXOpPuTbOpiG5Fb6DWGrt0lBZ9S"
+    "mode": "live",  # تغییر به live برای پرداخت واقعی
+    "client_id": "YOUR_LIVE_CLIENT_ID_HERE",
+    "client_secret": "YOUR_LIVE_CLIENT_SECRET_HERE"
 })
 
 LANGUAGES = {
