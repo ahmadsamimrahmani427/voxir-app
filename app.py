@@ -4,12 +4,12 @@ import edge_tts
 import asyncio
 import os
 import paypalrestsdk
-from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer  # اضافه شده
 
 app = Flask(__name__)
 app.secret_key = "your-secret-key"
 
-# تنظیم PayPal در حالت Live
+# پیکربندی PayPal (حالت live)
 paypalrestsdk.configure({
     "mode": "live",
     "client_id": "BAAPhnx7VkJgKOMM9B-Jowx06XDwRhrIeKIewOZBdKWJtkEDalPgw9vj6xw5Xi21YTIChXHr00JATIbVqY",
@@ -34,6 +34,8 @@ LANGUAGES = {
     "فرانسوی": "fr-FR-DeniseNeural",
     "اسپانیایی": "es-ES-ElviraNeural"
 }
+
+analyzer = SentimentIntensityAnalyzer()
 
 def is_logged_in():
     return google.authorized or session.get("email")
@@ -98,7 +100,7 @@ def create_payment():
     if plan_id == "free":
         return redirect(url_for("app_main"))
 
-    amount = "3.00"
+    amount = "3.00"  # قیمت پلن حرفه‌ای
 
     payment = paypalrestsdk.Payment({
         "intent": "sale",
@@ -165,34 +167,38 @@ def tts():
     if not text.strip():
         return {"error": "متن خالی است."}, 400
 
+    sentiment_scores = analyzer.polarity_scores(text)
+    compound = sentiment_scores['compound']
+
+    if compound >= 0.05:
+        sentiment = "positive"
+        icon = "😊"
+        color = "green"
+    elif compound <= -0.05:
+        sentiment = "negative"
+        icon = "😞"
+        color = "red"
+    else:
+        sentiment = "neutral"
+        icon = "😐"
+        color = "gray"
+
     output_path = "output.mp3"
     if os.path.exists(output_path):
         os.remove(output_path)
-
-    analyzer = SentimentIntensityAnalyzer()
-    sentiment_score = analyzer.polarity_scores(text)
-
-    # طبقه‌بندی احساس
-    if sentiment_score['compound'] >= 0.5:
-        emotion = "خوشحال"
-    elif sentiment_score['compound'] <= -0.5:
-        emotion = "غمگین"
-    else:
-        emotion = "عادی"
 
     async def synthesize():
         communicate = edge_tts.Communicate(text, voice)
         await communicate.save(output_path)
 
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    loop.run_until_complete(synthesize())
+    asyncio.run(synthesize())
 
-    return jsonify({
+    return {
         "audio_url": "/audio/output.mp3",
-        "sentiment": sentiment_score,
-        "emotion": emotion
-    })
+        "sentiment": sentiment,
+        "icon": icon,
+        "color": color
+    }
 
 @app.route('/audio/<path:filename>')
 def serve_audio(filename):
