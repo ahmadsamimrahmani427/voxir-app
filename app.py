@@ -3,19 +3,18 @@ from flask_dance.contrib.google import make_google_blueprint, google
 import edge_tts
 import asyncio
 import os
-import paypalrestsdk  # ← کتابخانه پرداخت
+import paypalrestsdk
 
 app = Flask(__name__)
 app.secret_key = "your-secret-key"
 
-# ✅ تنظیم پرداخت PayPal در حالت Live با کلیدهای واقعی
+# پیکربندی PayPal در حالت Live با کلیدهای شما
 paypalrestsdk.configure({
-    "mode": "live",  # حالت لایو (واقعی)
+    "mode": "live",  # حالت لایو
     "client_id": "BAAPhnx7VkJgKOMM9B-Jowx06XDwRhrIeKIewOZBdKWJtkEDalPgw9vj6xw5Xi21YTIChXHr00JATIbVqY",
     "client_secret": "ECQhDhRs-bMYbcVfOkfqIpS8ZizF5S6YPNRXlRdmbc00u7XfdacA0nXOpPuTbOpiG5Fb6DWGrt0lBZ9S"
 })
 
-# تنظیم ورود با گوگل
 GOOGLE_CLIENT_ID = "786899786922-vu682l6h78vlc1ab1gh3jq0ffjlmrugo.apps.googleusercontent.com"
 GOOGLE_CLIENT_SECRET = "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"
 
@@ -27,7 +26,6 @@ google_bp = make_google_blueprint(
 )
 app.register_blueprint(google_bp, url_prefix="/login")
 
-# لیست زبان‌ها
 LANGUAGES = {
     "فارسی": "fa-IR-DilaraNeural",
     "انگلیسی": "en-US-AriaNeural",
@@ -134,7 +132,7 @@ def create_payment():
                 return redirect(link.href)
         return "خطا در دریافت لینک پرداخت", 500
     else:
-        print("❌ خطا در ساخت پرداخت:", payment.error)
+        print("خطا در ساخت پرداخت:", payment.error)
         return f"خطا در ساخت پرداخت: {payment.error}", 500
 
 @app.route('/payment/execute')
@@ -145,14 +143,14 @@ def payment_execute():
     payment = paypalrestsdk.Payment.find(payment_id)
 
     if payment.execute({"payer_id": payer_id}):
-        return "✅ پرداخت با موفقیت انجام شد. متشکریم!"
+        return "پرداخت با موفقیت انجام شد. متشکریم!"
     else:
-        print("❌ خطا در تایید پرداخت:", payment.error)
+        print("خطا در تایید پرداخت:", payment.error)
         return f"خطا در تایید پرداخت: {payment.error}", 400
 
 @app.route('/payment/cancel')
 def payment_cancel():
-    return "⛔️ پرداخت توسط کاربر لغو شد."
+    return "پرداخت لغو شد."
 
 @app.route('/tts', methods=['POST'])
 def tts():
