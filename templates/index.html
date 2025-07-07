@@ -135,13 +135,39 @@
         #sentiment-display {
             margin-top: 15px;
             font-weight: bold;
-            font-size: 1.4em;
+            font-size: 1.2em;
             text-align: center;
-            color: #fff;
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
+            color: #fff;
+        }
+        /* رنگ‌ها بر اساس حس */
+        .positive {
+            color: #4caf50;
+        }
+        .neutral {
+            color: #ffc107;
+        }
+        .negative {
+            color: #f44336;
+        }
+        /* استایل انتخاب مود */
+        .mood-selector {
+            margin-top: 15px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            color: #eee;
+            font-weight: bold;
+        }
+        .mood-selector label {
+            cursor: pointer;
+        }
+        .mood-selector input[type="radio"] {
+            margin-left: 5px;
+            cursor: pointer;
         }
     </style>
 </head>
@@ -183,6 +209,13 @@
                 <option value="{{ voice }}">{{ lang }}</option>
                 {% endfor %}
             </select>
+
+            <div class="mood-selector">
+                <label><input type="radio" name="mood" value="neutral" checked /> حالت عادی</label>
+                <label><input type="radio" name="mood" value="cheerful" /> شاد</label>
+                <label><input type="radio" name="mood" value="sad" /> غمگین</label>
+            </div>
+
             <button id="generate-btn" style="margin-top: 15px; background-color: #2196f3; color: white; border: none; padding: 12px; border-radius: 40px; font-weight: bold; width: 100%; cursor: pointer;">تولید صدا</button>
 
             <audio id="audio-player" controls style="display:none; margin-top:15px; width:100%; border-radius: 10px; background-color: #333;"></audio>
@@ -206,8 +239,12 @@
         generateBtn.addEventListener('click', () => {
             messageDiv.textContent = '';
             sentimentDisplay.textContent = '';
+            sentimentDisplay.className = '';
             const text = textInput.value.trim();
             const voice = voiceSelect.value;
+
+            // دریافت مود انتخابی احساسات
+            const mood = document.querySelector('input[name="mood"]:checked').value;
 
             if (!text) {
                 messageDiv.textContent = 'لطفا متن را وارد کنید.';
@@ -220,7 +257,7 @@
             fetch('/tts', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({text, voice})
+                body: JSON.stringify({text, voice, mood})
             }).then(response => response.json())
               .then(data => {
                 generateBtn.disabled = false;
@@ -231,20 +268,56 @@
                     audioPlayer.style.display = 'none';
                     downloadBtn.style.display = 'none';
                     sentimentDisplay.textContent = '';
+                    sentimentDisplay.className = '';
                 } else {
                     audioPlayer.src = data.audio_url;
                     audioPlayer.style.display = 'block';
                     downloadBtn.style.display = 'inline-block';
                     messageDiv.textContent = '';
 
-                    // نمایش آیکن احساسات از پاسخ سرور
-                    sentimentDisplay.textContent = data.sentiment_icon || '';
+                    // درخواست تحلیل احساسات برای نمایش اموجی
+                    fetch('/sentiment', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({text})
+                    }).then(res => res.json())
+                      .then(sentimentData => {
+                        if(sentimentData.error) {
+                            sentimentDisplay.textContent = '';
+                            sentimentDisplay.className = '';
+                        } else {
+                            let sentimentText = '';
+                            let sentimentClass = '';
+                            let sentimentIcon = '';
+
+                            if (sentimentData.compound >= 0.05) {
+                                sentimentText = 'مثبت';
+                                sentimentClass = 'positive';
+                                sentimentIcon = '😊';
+                            } else if (sentimentData.compound <= -0.05) {
+                                sentimentText = 'منفی';
+                                sentimentClass = 'negative';
+                                sentimentIcon = '😞';
+                            } else {
+                                sentimentText = 'خنثی';
+                                sentimentClass = 'neutral';
+                                sentimentIcon = '😐';
+                            }
+
+                            sentimentDisplay.textContent = sentimentIcon + ' ' + sentimentText;
+                            sentimentDisplay.className = sentimentClass;
+                        }
+                      }).catch(() => {
+                        sentimentDisplay.textContent = '';
+                        sentimentDisplay.className = '';
+                      });
                 }
               }).catch(() => {
                 messageDiv.textContent = 'خطا در ارتباط با سرور.';
                 generateBtn.disabled = false;
                 generateBtn.textContent = 'تولید صدا';
                 sentimentDisplay.textContent = '';
+                sentimentDisplay.className = '';
               });
         });
 
