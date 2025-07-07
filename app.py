@@ -11,9 +11,9 @@ from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 app = Flask(__name__)
 app.secret_key = "your-secret-key"
 
-# پیکربندی PayPal در حالت Live با کلیدهای شما
+# پیکربندی PayPal در حالت Live
 paypalrestsdk.configure({
-    "mode": "live",  # حالت لایو
+    "mode": "live",
     "client_id": "BAAPhnx7VkJgKOMM9B-Jowx06XDwRhrIeKIewOZBdKWJtkEDalPgw9vj6xw5Xi21YTIChXHr00JATIbVqY",
     "client_secret": "ECQhDhRs-bMYbcVfOkfqIpS8ZizF5S6YPNRXlRdmbc00u7XfdacA0nXOpPuTbOpiG5Fb6DWGrt0lBZ9S"
 })
@@ -102,7 +102,7 @@ def create_payment():
     if plan_id == "free":
         return redirect(url_for("app_main"))
 
-    amount = "3.00"  # قیمت پلن حرفه‌ای
+    amount = "3.00"
 
     payment = paypalrestsdk.Payment({
         "intent": "sale",
@@ -169,12 +169,27 @@ def tts():
     if not text.strip():
         return {"error": "متن خالی است."}, 400
 
+    # تحلیل احساس
+    scores = analyzer.polarity_scores(text)
+    compound = scores["compound"]
+
+    # انتخاب سبک گفتار مناسب
+    if compound >= 0.4:
+        style = "cheerful"
+    elif compound <= -0.4:
+        style = "sad"
+    else:
+        style = None
+
     output_path = "output.mp3"
     if os.path.exists(output_path):
         os.remove(output_path)
 
     async def synthesize():
-        communicate = edge_tts.Communicate(text, voice)
+        if style:
+            communicate = edge_tts.Communicate(text, voice, style=style)
+        else:
+            communicate = edge_tts.Communicate(text, voice)
         await communicate.save(output_path)
 
     asyncio.run(synthesize())
@@ -192,7 +207,6 @@ def download():
         return "فایل یافت نشد", 404
     return send_file("output.mp3", as_attachment=True)
 
-# ------------------ بخش جدید تحلیل احساسات -------------------
 @app.route('/sentiment', methods=['POST'])
 def sentiment():
     data = request.get_json()
@@ -202,10 +216,7 @@ def sentiment():
         return jsonify({"error": "متن خالی است."})
 
     scores = analyzer.polarity_scores(text)
-    # مقدار compound را برمی‌گردانیم که بین -1 تا 1 است
     return jsonify(scores)
-
-# -------------------------------------------------------------
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=3000, debug=True)
