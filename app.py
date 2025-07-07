@@ -5,14 +5,15 @@ import asyncio
 import os
 import paypalrestsdk
 
+# اضافه شده برای تحلیل احساسات
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
 app = Flask(__name__)
 app.secret_key = "your-secret-key"
 
-# پیکربندی PayPal
+# پیکربندی PayPal در حالت Live با کلیدهای شما
 paypalrestsdk.configure({
-    "mode": "live",
+    "mode": "live",  # حالت لایو
     "client_id": "BAAPhnx7VkJgKOMM9B-Jowx06XDwRhrIeKIewOZBdKWJtkEDalPgw9vj6xw5Xi21YTIChXHr00JATIbVqY",
     "client_secret": "ECQhDhRs-bMYbcVfOkfqIpS8ZizF5S6YPNRXlRdmbc00u7XfdacA0nXOpPuTbOpiG5Fb6DWGrt0lBZ9S"
 })
@@ -168,47 +169,19 @@ def tts():
     if not text.strip():
         return {"error": "متن خالی است."}, 400
 
-    # تحلیل احساسات متن
-    scores = analyzer.polarity_scores(text)
-    compound = scores['compound']
-
-    # تعیین حالت مود برای تبدیل گفتار
-    style = "general"
-    if compound >= 0.05:
-        style = "cheerful"
-    elif compound <= -0.05:
-        style = "sad"
-
-    # ساخت SSML با مود احساسات
-    ssml_text = f"""
-    <speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis"
-           xmlns:mstts="https://www.w3.org/2001/mstts"
-           xml:lang="fa-IR">
-      <mstts:express-as style="{style}">
-        {text}
-      </mstts:express-as>
-    </speak>
-    """
-
     output_path = "output.mp3"
     if os.path.exists(output_path):
         os.remove(output_path)
 
     async def synthesize():
-        communicate = edge_tts.Communicate(ssml_text, voice)
+        communicate = edge_tts.Communicate(text, voice)
         await communicate.save(output_path)
 
-    try:
-        asyncio.run(synthesize())
-    except Exception as e:
-        return {"error": f"خطا در تولید صدا: {e}"}, 500
-
+    asyncio.run(synthesize())
     return {"audio_url": "/audio/output.mp3"}
 
 @app.route('/audio/<path:filename>')
 def serve_audio(filename):
-    if not os.path.exists(filename):
-        return "فایل یافت نشد", 404
     return send_file(filename, mimetype='audio/mpeg')
 
 @app.route('/download')
@@ -219,6 +192,7 @@ def download():
         return "فایل یافت نشد", 404
     return send_file("output.mp3", as_attachment=True)
 
+# ------------------ بخش جدید تحلیل احساسات -------------------
 @app.route('/sentiment', methods=['POST'])
 def sentiment():
     data = request.get_json()
@@ -228,7 +202,10 @@ def sentiment():
         return jsonify({"error": "متن خالی است."})
 
     scores = analyzer.polarity_scores(text)
+    # مقدار compound را برمی‌گردانیم که بین -1 تا 1 است
     return jsonify(scores)
+
+# -------------------------------------------------------------
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=3000, debug=True)
