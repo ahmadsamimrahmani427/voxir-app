@@ -4,6 +4,7 @@ import edge_tts
 import asyncio
 import os
 import paypalrestsdk
+
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
 app = Flask(__name__)
@@ -11,14 +12,13 @@ app.secret_key = "your-secret-key"
 
 # پیکربندی PayPal
 paypalrestsdk.configure({
-    "mode": "live",  # یا "sandbox" برای تست
-    "client_id": "YOUR_PAYPAL_CLIENT_ID",
-    "client_secret": "YOUR_PAYPAL_CLIENT_SECRET"
+    "mode": "live",
+    "client_id": "BAAPhnx7VkJgKOMM9B-Jowx06XDwRhrIeKIewOZBdKWJtkEDalPgw9vj6xw5Xi21YTIChXHr00JATIbVqY",
+    "client_secret": "ECQhDhRs-bMYbcVfOkfqIpS8ZizF5S6YPNRXlRdmbc00u7XfdacA0nXOpPuTbOpiG5Fb6DWGrt0lBZ9S"
 })
 
-# تنظیمات گوگل اوث
-GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID"
-GOOGLE_CLIENT_SECRET = "YOUR_GOOGLE_CLIENT_SECRET"
+GOOGLE_CLIENT_ID = "786899786922-vu682l6h78vlc1ab1gh3jq0ffjlmrugo.apps.googleusercontent.com"
+GOOGLE_CLIENT_SECRET = "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"
 
 google_bp = make_google_blueprint(
     client_id=GOOGLE_CLIENT_ID,
@@ -168,22 +168,34 @@ def tts():
     if not text.strip():
         return {"error": "متن خالی است."}, 400
 
-    # تحلیل احساسات و انتخاب مود صدای مناسب
+    # تحلیل احساسات متن
     scores = analyzer.polarity_scores(text)
     compound = scores['compound']
 
+    # تعیین حالت مود برای تبدیل گفتار
     style = "general"
     if compound >= 0.05:
         style = "cheerful"
     elif compound <= -0.05:
         style = "sad"
 
+    # ساخت SSML با مود احساسات
+    ssml_text = f"""
+    <speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis"
+           xmlns:mstts="https://www.w3.org/2001/mstts"
+           xml:lang="fa-IR">
+      <mstts:express-as style="{style}">
+        {text}
+      </mstts:express-as>
+    </speak>
+    """
+
     output_path = "output.mp3"
     if os.path.exists(output_path):
         os.remove(output_path)
 
     async def synthesize():
-        communicate = edge_tts.Communicate(text, voice, style=style)
+        communicate = edge_tts.Communicate(ssml_text, voice)
         await communicate.save(output_path)
 
     try:
@@ -195,19 +207,17 @@ def tts():
 
 @app.route('/audio/<path:filename>')
 def serve_audio(filename):
-    full_path = os.path.join(os.getcwd(), filename)
-    if not os.path.isfile(full_path):
+    if not os.path.exists(filename):
         return "فایل یافت نشد", 404
-    return send_file(full_path, mimetype='audio/mpeg')
+    return send_file(filename, mimetype='audio/mpeg')
 
 @app.route('/download')
 def download():
     if not is_logged_in():
         return redirect(url_for("login"))
-    file_path = "output.mp3"
-    if not os.path.exists(file_path):
+    if not os.path.exists("output.mp3"):
         return "فایل یافت نشد", 404
-    return send_file(file_path, as_attachment=True)
+    return send_file("output.mp3", as_attachment=True)
 
 @app.route('/sentiment', methods=['POST'])
 def sentiment():
