@@ -4,14 +4,16 @@ import edge_tts
 import asyncio
 import os
 import paypalrestsdk
-from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer  # اضافه شده
+
+# اضافه شده برای تحلیل احساسات
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
 app = Flask(__name__)
 app.secret_key = "your-secret-key"
 
-# پیکربندی PayPal (حالت live)
+# پیکربندی PayPal در حالت Live با کلیدهای شما
 paypalrestsdk.configure({
-    "mode": "live",
+    "mode": "live",  # حالت لایو
     "client_id": "BAAPhnx7VkJgKOMM9B-Jowx06XDwRhrIeKIewOZBdKWJtkEDalPgw9vj6xw5Xi21YTIChXHr00JATIbVqY",
     "client_secret": "ECQhDhRs-bMYbcVfOkfqIpS8ZizF5S6YPNRXlRdmbc00u7XfdacA0nXOpPuTbOpiG5Fb6DWGrt0lBZ9S"
 })
@@ -167,22 +169,6 @@ def tts():
     if not text.strip():
         return {"error": "متن خالی است."}, 400
 
-    sentiment_scores = analyzer.polarity_scores(text)
-    compound = sentiment_scores['compound']
-
-    if compound >= 0.05:
-        sentiment = "positive"
-        icon = "😊"
-        color = "green"
-    elif compound <= -0.05:
-        sentiment = "negative"
-        icon = "😞"
-        color = "red"
-    else:
-        sentiment = "neutral"
-        icon = "😐"
-        color = "gray"
-
     output_path = "output.mp3"
     if os.path.exists(output_path):
         os.remove(output_path)
@@ -192,13 +178,7 @@ def tts():
         await communicate.save(output_path)
 
     asyncio.run(synthesize())
-
-    return {
-        "audio_url": "/audio/output.mp3",
-        "sentiment": sentiment,
-        "icon": icon,
-        "color": color
-    }
+    return {"audio_url": "/audio/output.mp3"}
 
 @app.route('/audio/<path:filename>')
 def serve_audio(filename):
@@ -211,6 +191,21 @@ def download():
     if not os.path.exists("output.mp3"):
         return "فایل یافت نشد", 404
     return send_file("output.mp3", as_attachment=True)
+
+# ------------------ بخش جدید تحلیل احساسات -------------------
+@app.route('/sentiment', methods=['POST'])
+def sentiment():
+    data = request.get_json()
+    text = data.get('text', '')
+
+    if not text.strip():
+        return jsonify({"error": "متن خالی است."})
+
+    scores = analyzer.polarity_scores(text)
+    # مقدار compound را برمی‌گردانیم که بین -1 تا 1 است
+    return jsonify(scores)
+
+# -------------------------------------------------------------
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=3000, debug=True)
