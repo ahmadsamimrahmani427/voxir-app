@@ -4,12 +4,12 @@ import edge_tts
 import asyncio
 import os
 import paypalrestsdk
-from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer  # اضافه شد
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
 app = Flask(__name__)
 app.secret_key = "your-secret-key"
 
-# پیکربندی PayPal در حالت Live
+# تنظیم PayPal در حالت Live
 paypalrestsdk.configure({
     "mode": "live",
     "client_id": "BAAPhnx7VkJgKOMM9B-Jowx06XDwRhrIeKIewOZBdKWJtkEDalPgw9vj6xw5Xi21YTIChXHr00JATIbVqY",
@@ -102,7 +102,9 @@ def create_payment():
 
     payment = paypalrestsdk.Payment({
         "intent": "sale",
-        "payer": {"payment_method": "paypal"},
+        "payer": {
+            "payment_method": "paypal"
+        },
         "redirect_urls": {
             "return_url": url_for('payment_execute', _external=True),
             "cancel_url": url_for('payment_cancel', _external=True)
@@ -117,7 +119,10 @@ def create_payment():
                     "quantity": 1
                 }]
             },
-            "amount": {"total": amount, "currency": "USD"},
+            "amount": {
+                "total": amount,
+                "currency": "USD"
+            },
             "description": "خرید پلن ۳ ماهه حرفه‌ای"
         }]
     })
@@ -160,39 +165,33 @@ def tts():
     if not text.strip():
         return {"error": "متن خالی است."}, 400
 
-    # تحلیل احساسات با VADER
-    analyzer = SentimentIntensityAnalyzer()
-    scores = analyzer.polarity_scores(text)
-    compound = scores["compound"]
-
-    if compound >= 0.5:
-        sentiment = "مثبت"
-        icon = "😊"
-        color = "green"
-    elif compound <= -0.5:
-        sentiment = "منفی"
-        icon = "😢"
-        color = "red"
-    else:
-        sentiment = "خنثی"
-        icon = "😐"
-        color = "gray"
-
     output_path = "output.mp3"
     if os.path.exists(output_path):
         os.remove(output_path)
+
+    analyzer = SentimentIntensityAnalyzer()
+    sentiment_score = analyzer.polarity_scores(text)
+
+    # طبقه‌بندی احساس
+    if sentiment_score['compound'] >= 0.5:
+        emotion = "خوشحال"
+    elif sentiment_score['compound'] <= -0.5:
+        emotion = "غمگین"
+    else:
+        emotion = "عادی"
 
     async def synthesize():
         communicate = edge_tts.Communicate(text, voice)
         await communicate.save(output_path)
 
-    asyncio.run(synthesize())
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    loop.run_until_complete(synthesize())
 
     return jsonify({
         "audio_url": "/audio/output.mp3",
-        "sentiment": sentiment,
-        "icon": icon,
-        "color": color
+        "sentiment": sentiment_score,
+        "emotion": emotion
     })
 
 @app.route('/audio/<path:filename>')
