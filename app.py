@@ -9,8 +9,9 @@ from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 app = Flask(__name__)
 app.secret_key = "your-secret-key"
 
+# پیکربندی PayPal در حالت Live با کلیدهای شما
 paypalrestsdk.configure({
-    "mode": "live",
+    "mode": "live",  # یا "sandbox" اگر برای تست است
     "client_id": "BAAPhnx7VkJgKOMM9B-Jowx06XDwRhrIeKIewOZBdKWJtkEDalPgw9vj6xw5Xi21YTIChXHr00JATIbVqY",
     "client_secret": "ECQhDhRs-bMYbcVfOkfqIpS8ZizF5S6YPNRXlRdmbc00u7XfdacA0nXOpPuTbOpiG5Fb6DWGrt0lBZ9S"
 })
@@ -54,12 +55,15 @@ def login():
         password = request.form.get("password")
         if email and password:
             session["email"] = email
+            session["free_uses"] = 3  # تنظیم تعداد استفاده رایگان در ورود معمولی
             return redirect(url_for("app_main"))
 
     if google.authorized:
         resp = google.get("/oauth2/v2/userinfo")
         if resp.ok:
             session["email"] = resp.json().get("email")
+            if "free_uses" not in session:
+                session["free_uses"] = 3
             return redirect(url_for("app_main"))
 
     return render_template("login.html")
@@ -74,7 +78,7 @@ def app_main():
     if not is_logged_in():
         return redirect(url_for("login"))
     email = session.get("email", "کاربر")
-    free_uses = 1
+    free_uses = session.get("free_uses", 3)
     plans = [
         {"name": "پلن رایگان", "price": "رایگان", "features": ["۳ استفاده رایگان"], "id": "free"},
         {"name": "پلن ۳ ماهه حرفه‌ای", "price": "۳ دلار", "features": ["استفاده نامحدود", "پشتیبانی ویژه"], "id": "pro"},
@@ -99,7 +103,7 @@ def create_payment():
     if plan_id == "free":
         return redirect(url_for("app_main"))
 
-    amount = "3.00"
+    amount = "3.00"  # قیمت پلن حرفه‌ای
 
     payment = paypalrestsdk.Payment({
         "intent": "sale",
@@ -145,6 +149,8 @@ def payment_execute():
     payment = paypalrestsdk.Payment.find(payment_id)
 
     if payment.execute({"payer_id": payer_id}):
+        # پس از خرید، تعداد استفاده رایگان را نامحدود کنیم (یا هر سیاست دلخواه شما)
+        session["free_uses"] = 9999
         return "پرداخت با موفقیت انجام شد. متشکریم!"
     else:
         print("خطا در تایید پرداخت:", payment.error)
@@ -159,42 +165,59 @@ def tts():
     if not is_logged_in():
         return {"error": "لطفا وارد شوید."}, 403
 
+    free_uses = session.get("free_uses", 3)
+    if free_uses <= 0:
+        return {"error": "تعداد استفاده رایگان شما به پایان رسیده است. لطفاً پلن خود را ارتقا دهید."}, 403
+
     data = request.get_json()
     text = data.get('text', '')
     voice = data.get('voice', 'fa-IR-DilaraNeural')
+    emotion = data.get('emotion', 'neutral')  # حالت احساس از کلاینت (cheerful, sad, neutral)
 
     if not text.strip():
         return {"error": "متن خالی است."}, 400
+
+    # کاهش استفاده رایگان
+    session["free_uses"] = free_uses - 1
+
+    # تعیین style بر اساس احساس
+    style_map = {
+        "cheerful": "cheerful",
+        "sad": "sad",
+        "neutral": "neutral"
+    }
+    style = style_map.get(emotion, "neutral")
 
     output_path = "output.mp3"
     if os.path.exists(output_path):
         os.remove(output_path)
 
-    # تحلیل احساسات برای تعیین آیکن (ولی مود صدای خاص نمی‌دهیم چون edge-tts نسخه قدیمی)
-    scores = analyzer.polarity_scores(text)
-    compound = scores.get('compound', 0)
-    if compound >= 0.05:
-        sentiment_icon = '😊'
-    elif compound <= -0.05:
-        sentiment_icon = '😞'
-    else:
-        sentiment_icon = '😐'
-
     async def synthesize():
-        communicate = edge_tts.Communicate(text, voice)  # بدون style
+        # edge_tts.Communicate ساختار جدید بدون پارامتر style مستقیم
+        # برای اعمال style باید متن را SSML دهیم
+        # قالب SSML با حالت احساس:
+        ssml_text = f"""
+        <speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="en-US">
+          <voice name="{voice}">
+            <mstts:express-as style="{style}" xmlns:mstts="http://www.w3.org/2001/mstts">{text}</mstts:express-as>
+          </voice>
+        </speak>
+        """
+        communicate = edge_tts.Communicate(ssml_text, voice, input_format="ssml")
         await communicate.save(output_path)
 
     try:
         asyncio.run(synthesize())
     except Exception as e:
-        print("❌ Error generating sound:", e)
+        print("Error generating sound:", e)
         return {"error": "خطا در تولید صدا."}, 500
 
-    # می‌تونیم آیکن احساسات رو هم برگردونیم اگر خواستی از جاوااسکریپت نمایش بدی
-    return {"audio_url": "/audio/output.mp3", "sentiment_icon": sentiment_icon}
+    return {"audio_url": "/audio/output.mp3"}
 
 @app.route('/audio/<path:filename>')
 def serve_audio(filename):
+    if not os.path.exists(filename):
+        return "فایل یافت نشد", 404
     return send_file(filename, mimetype='audio/mpeg')
 
 @app.route('/download')
