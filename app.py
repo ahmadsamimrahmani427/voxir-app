@@ -9,9 +9,8 @@ from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 app = Flask(__name__)
 app.secret_key = "your-secret-key"
 
-# پیکربندی PayPal
 paypalrestsdk.configure({
-    "mode": "live",  # یا "sandbox" برای تست
+    "mode": "live",
     "client_id": "BAAPhnx7VkJgKOMM9B-Jowx06XDwRhrIeKIewOZBdKWJtkEDalPgw9vj6xw5Xi21YTIChXHr00JATIbVqY",
     "client_secret": "ECQhDhRs-bMYbcVfOkfqIpS8ZizF5S6YPNRXlRdmbc00u7XfdacA0nXOpPuTbOpiG5Fb6DWGrt0lBZ9S"
 })
@@ -55,7 +54,7 @@ def login():
         password = request.form.get("password")
         if email and password:
             session["email"] = email
-            session["free_uses"] = 3  # 3 استفاده رایگان برای هر کاربر تازه
+            session["free_uses"] = 3
             return redirect(url_for("app_main"))
 
     if google.authorized:
@@ -103,7 +102,7 @@ def create_payment():
     if plan_id == "free":
         return redirect(url_for("app_main"))
 
-    amount = "3.00"  # قیمت پلن حرفه‌ای
+    amount = "3.00"
 
     payment = paypalrestsdk.Payment({
         "intent": "sale",
@@ -142,7 +141,7 @@ def payment_execute():
     payment = paypalrestsdk.Payment.find(payment_id)
 
     if payment.execute({"payer_id": payer_id}):
-        session["free_uses"] = 9999  # دسترسی نامحدود بعد از خرید
+        session["free_uses"] = 9999
         return "پرداخت با موفقیت انجام شد. متشکریم!"
     else:
         print("خطا در تایید پرداخت:", payment.error)
@@ -160,7 +159,7 @@ def tts():
     data = request.get_json()
     text = data.get('text', '').strip()
     voice = data.get('voice', 'fa-IR-DilaraNeural')
-    mood = data.get('mood', 'neutral')  # "cheerful" ، "sad" یا "neutral"
+    mood = data.get('mood', 'neutral')
 
     if not text:
         return {"error": "متن خالی است."}, 400
@@ -181,7 +180,7 @@ def tts():
     }
 
     style = None
-    if mood != "neutral" and voice in voices_with_style:
+    if mood in ("cheerful", "sad") and voice in voices_with_style:
         style = mood
 
     try:
@@ -197,7 +196,7 @@ def tts():
         print(f"❌ Error generating sound: {e}")
         return {"error": "خطا در تولید صدا."}, 500
 
-    # کم کردن تعداد استفاده رایگان
+    # کم کردن تعداد استفاده رایگان (اگر کمتر از نامحدود باشد)
     if session.get("free_uses", 0) > 0 and session.get("free_uses", 0) < 9999:
         session["free_uses"] -= 1
 
