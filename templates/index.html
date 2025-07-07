@@ -198,6 +198,7 @@
             <button id="download-btn" style="display:none;">دانلود صدا</button>
 
             <div id="message"></div>
+
             <div id="sentiment-display"></div>
         </section>
     </main>
@@ -230,9 +231,8 @@
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({text, voice})
-            })
-            .then(response => response.json())
-            .then(data => {
+            }).then(response => response.json())
+              .then(data => {
                 generateBtn.disabled = false;
                 generateBtn.textContent = 'تولید صدا';
 
@@ -248,14 +248,13 @@
                     downloadBtn.style.display = 'inline-block';
                     messageDiv.textContent = '';
 
-                    // تحلیل احساسات و نمایش آن
+                    // تحلیل احساسات
                     fetch('/sentiment', {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
                         body: JSON.stringify({text})
-                    })
-                    .then(res => res.json())
-                    .then(sentimentData => {
+                    }).then(res => res.json())
+                      .then(sentimentData => {
                         if(sentimentData.error) {
                             sentimentDisplay.textContent = '';
                             sentimentDisplay.className = '';
@@ -281,20 +280,18 @@
                             sentimentDisplay.textContent = sentimentIcon + ' ' + sentimentText;
                             sentimentDisplay.className = sentimentClass;
                         }
-                    })
-                    .catch(() => {
+                      }).catch(() => {
                         sentimentDisplay.textContent = '';
                         sentimentDisplay.className = '';
-                    });
+                      });
                 }
-            })
-            .catch(() => {
+              }).catch(() => {
                 messageDiv.textContent = 'خطا در ارتباط با سرور.';
                 generateBtn.disabled = false;
                 generateBtn.textContent = 'تولید صدا';
                 sentimentDisplay.textContent = '';
                 sentimentDisplay.className = '';
-            });
+              });
         });
 
         downloadBtn.addEventListener('click', () => {
