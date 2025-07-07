@@ -279,8 +279,9 @@
                                 sentimentIcon = '😐';
                             }
 
-                            sentimentDisplay.textContent = sentimentIcon + ' ' + sentimentText;
+                            sentimentDisplay.textContent = sentimentText;
                             sentimentDisplay.className = sentimentClass;
+                            sentimentDisplay.textContent = sentimentIcon + ' ' + sentimentText;
                         }
                       }).catch(() => {
                         sentimentDisplay.textContent = '';
