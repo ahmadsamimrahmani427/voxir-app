@@ -21,6 +21,23 @@
     .user-info {
         font-size: 1.2rem;
         font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .app-name {
+        font-weight: 700;
+        font-size: 1.5rem;
+        color: #2196f3; /* رنگ آبی */
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        user-select: none;
+    }
+    .app-name svg {
+        width: 24px;
+        height: 24px;
+        fill: #2196f3;
     }
     .logout-btn {
         background-color: #f44336;
@@ -204,6 +221,15 @@
 </head>
 <body>
 <header>
+    <div class="app-name" title="Voxir - اپلیکیشن تبدیل متن به گفتار">
+        <!-- آیکون میکروفن SVG -->
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" >
+            <path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/>
+            <path d="M19 10v1a7 7 0 0 1-14 0v-1"/>
+            <path d="M12 17v4m-4 0h8"/>
+        </svg>
+        Voxir
+    </div>
     <div class="user-info">سلام، {{ email }}!</div>
     <form action="{{ url_for('logout') }}" method="get" style="margin:0;">
         <button class="logout-btn" type="submit">خروج</button>
