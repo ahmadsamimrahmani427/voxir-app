@@ -1,16 +1,17 @@
-from flask import Flask, render_template, redirect, url_for, request, session, send_file
+from flask import Flask, render_template, redirect, url_for, request, session, send_file, jsonify
 from flask_dance.contrib.google import make_google_blueprint, google
 import edge_tts
 import asyncio
 import os
 import paypalrestsdk
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer  # اضافه شد
 
 app = Flask(__name__)
 app.secret_key = "your-secret-key"
 
-# پیکربندی PayPal در حالت Live با کلیدهای شما
+# پیکربندی PayPal در حالت Live
 paypalrestsdk.configure({
-    "mode": "live",  # حالت لایو
+    "mode": "live",
     "client_id": "BAAPhnx7VkJgKOMM9B-Jowx06XDwRhrIeKIewOZBdKWJtkEDalPgw9vj6xw5Xi21YTIChXHr00JATIbVqY",
     "client_secret": "ECQhDhRs-bMYbcVfOkfqIpS8ZizF5S6YPNRXlRdmbc00u7XfdacA0nXOpPuTbOpiG5Fb6DWGrt0lBZ9S"
 })
@@ -97,13 +98,11 @@ def create_payment():
     if plan_id == "free":
         return redirect(url_for("app_main"))
 
-    amount = "3.00"  # قیمت پلن حرفه‌ای
+    amount = "3.00"
 
     payment = paypalrestsdk.Payment({
         "intent": "sale",
-        "payer": {
-            "payment_method": "paypal"
-        },
+        "payer": {"payment_method": "paypal"},
         "redirect_urls": {
             "return_url": url_for('payment_execute', _external=True),
             "cancel_url": url_for('payment_cancel', _external=True)
@@ -118,10 +117,7 @@ def create_payment():
                     "quantity": 1
                 }]
             },
-            "amount": {
-                "total": amount,
-                "currency": "USD"
-            },
+            "amount": {"total": amount, "currency": "USD"},
             "description": "خرید پلن ۳ ماهه حرفه‌ای"
         }]
     })
@@ -164,6 +160,24 @@ def tts():
     if not text.strip():
         return {"error": "متن خالی است."}, 400
 
+    # تحلیل احساسات با VADER
+    analyzer = SentimentIntensityAnalyzer()
+    scores = analyzer.polarity_scores(text)
+    compound = scores["compound"]
+
+    if compound >= 0.5:
+        sentiment = "مثبت"
+        icon = "😊"
+        color = "green"
+    elif compound <= -0.5:
+        sentiment = "منفی"
+        icon = "😢"
+        color = "red"
+    else:
+        sentiment = "خنثی"
+        icon = "😐"
+        color = "gray"
+
     output_path = "output.mp3"
     if os.path.exists(output_path):
         os.remove(output_path)
@@ -173,7 +187,13 @@ def tts():
         await communicate.save(output_path)
 
     asyncio.run(synthesize())
-    return {"audio_url": "/audio/output.mp3"}
+
+    return jsonify({
+        "audio_url": "/audio/output.mp3",
+        "sentiment": sentiment,
+        "icon": icon,
+        "color": color
+    })
 
 @app.route('/audio/<path:filename>')
 def serve_audio(filename):
