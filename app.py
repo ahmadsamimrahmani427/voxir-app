@@ -4,22 +4,20 @@ import edge_tts
 import asyncio
 import os
 import paypalrestsdk
-
-# اضافه شده برای تحلیل احساسات
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
 app = Flask(__name__)
 app.secret_key = "your-secret-key"
 
-# پیکربندی PayPal در حالت Live با کلیدهای شما
+# پیکربندی PayPal
 paypalrestsdk.configure({
-    "mode": "live",  # حالت لایو
-    "client_id": "BAAPhnx7VkJgKOMM9B-Jowx06XDwRhrIeKIewOZBdKWJtkEDalPgw9vj6xw5Xi21YTIChXHr00JATIbVqY",
-    "client_secret": "ECQhDhRs-bMYbcVfOkfqIpS8ZizF5S6YPNRXlRdmbc00u7XfdacA0nXOpPuTbOpiG5Fb6DWGrt0lBZ9S"
+    "mode": "live",
+    "client_id": "YOUR_PAYPAL_CLIENT_ID",
+    "client_secret": "YOUR_PAYPAL_CLIENT_SECRET"
 })
 
-GOOGLE_CLIENT_ID = "786899786922-vu682l6h78vlc1ab1gh3jq0ffjlmrugo.apps.googleusercontent.com"
-GOOGLE_CLIENT_SECRET = "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"
+GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID"
+GOOGLE_CLIENT_SECRET = "YOUR_GOOGLE_CLIENT_SECRET"
 
 google_bp = make_google_blueprint(
     client_id=GOOGLE_CLIENT_ID,
@@ -102,13 +100,11 @@ def create_payment():
     if plan_id == "free":
         return redirect(url_for("app_main"))
 
-    amount = "3.00"  # قیمت پلن حرفه‌ای
+    amount = "3.00"
 
     payment = paypalrestsdk.Payment({
         "intent": "sale",
-        "payer": {
-            "payment_method": "paypal"
-        },
+        "payer": {"payment_method": "paypal"},
         "redirect_urls": {
             "return_url": url_for('payment_execute', _external=True),
             "cancel_url": url_for('payment_cancel', _external=True)
@@ -123,10 +119,7 @@ def create_payment():
                     "quantity": 1
                 }]
             },
-            "amount": {
-                "total": amount,
-                "currency": "USD"
-            },
+            "amount": {"total": amount, "currency": "USD"},
             "description": "خرید پلن ۳ ماهه حرفه‌ای"
         }]
     })
@@ -157,7 +150,6 @@ def payment_execute():
 def payment_cancel():
     return "پرداخت لغو شد."
 
-# تابع تولید صدا با edge-tts که مود احساس را در نظر می‌گیرد
 @app.route('/tts', methods=['POST'])
 def tts():
     if not is_logged_in():
@@ -174,7 +166,7 @@ def tts():
     scores = analyzer.polarity_scores(text)
     compound = scores['compound']
 
-    # تعیین مود احساس برای edge-tts
+    # انتخاب مود صدا
     if compound >= 0.05:
         style = "cheerful"
     elif compound <= -0.05:
@@ -187,17 +179,14 @@ def tts():
         os.remove(output_path)
 
     async def synthesize():
-        # استفاده از style برای حالت احساس
         communicate = edge_tts.Communicate(text, voice, style=style)
         await communicate.save(output_path)
 
     asyncio.run(synthesize())
-
     return {"audio_url": "/audio/output.mp3"}
 
 @app.route('/audio/<path:filename>')
 def serve_audio(filename):
-    # فرض شده فایل خروجی در ریشه پروژه ذخیره شده
     return send_file(filename, mimetype='audio/mpeg')
 
 @app.route('/download')
@@ -208,7 +197,6 @@ def download():
         return "فایل یافت نشد", 404
     return send_file("output.mp3", as_attachment=True)
 
-# ------------------ بخش جدید تحلیل احساسات -------------------
 @app.route('/sentiment', methods=['POST'])
 def sentiment():
     data = request.get_json()
@@ -218,10 +206,7 @@ def sentiment():
         return jsonify({"error": "متن خالی است."})
 
     scores = analyzer.polarity_scores(text)
-    # مقدار compound را برمی‌گردانیم که بین -1 تا 1 است
     return jsonify(scores)
-
-# -------------------------------------------------------------
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=3000, debug=True)
