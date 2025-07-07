@@ -34,10 +34,6 @@
             border-radius: 40px;
             cursor: pointer;
             font-weight: bold;
-            transition: background-color 0.3s ease;
-        }
-        .logout-btn:hover {
-            background-color: #1976d2;
         }
         main {
             max-width: 700px;
@@ -62,26 +58,6 @@
             box-shadow: 0 0 10px #2196f3;
             text-align: center;
         }
-        .plan-title {
-            font-weight: bold;
-            font-size: 1.4em;
-            margin-bottom: 10px;
-            color: #64b5f6;
-        }
-        .plan-price {
-            font-size: 1.2em;
-            margin-bottom: 15px;
-            color: #90caf9;
-        }
-        .plan-features {
-            margin-bottom: 15px;
-            color: #bbb;
-            font-size: 0.95em;
-            text-align: right;
-        }
-        .buy-form {
-            margin-top: 10px;
-        }
         .buy-btn {
             background-color: #2196f3;
             color: white;
@@ -91,25 +67,12 @@
             border-radius: 40px;
             cursor: pointer;
             font-weight: bold;
-            font-size: 1em;
-            transition: background-color 0.3s ease;
-        }
-        .buy-btn:hover {
-            background-color: #1976d2;
-        }
-        #free-uses {
-            margin-bottom: 25px;
-            color: #90caf9;
-            font-weight: bold;
-            text-align: center;
         }
         #audio-player {
             width: 100%;
             margin-top: 20px;
             display: none;
-            outline: none;
             border-radius: 10px;
-            background-color: #333;
         }
         #download-btn {
             margin-top: 15px;
@@ -121,10 +84,6 @@
             cursor: pointer;
             font-weight: bold;
             display: none;
-            transition: background-color 0.3s ease;
-        }
-        #download-btn:hover {
-            background-color: #1976d2;
         }
         #message {
             margin-top: 15px;
@@ -141,18 +100,10 @@
             justify-content: center;
             align-items: center;
             gap: 10px;
-            color: #fff;
         }
-        /* رنگ‌ها بر اساس حس */
-        .positive {
-            color: #4caf50;
-        }
-        .neutral {
-            color: #ffc107;
-        }
-        .negative {
-            color: #f44336;
-        }
+        .positive { color: #4caf50; }
+        .neutral { color: #ffc107; }
+        .negative { color: #f44336; }
     </style>
 </head>
 <body>
@@ -162,9 +113,9 @@
             <button class="logout-btn" type="submit">خروج</button>
         </form>
     </header>
+
     <main>
         <h2>پلن‌های اشتراک</h2>
-        <div id="free-uses">شما {{ free_uses }} استفاده رایگان دارید.</div>
         <div class="plans-container">
             {% for plan in plans %}
             <div class="plan-card">
@@ -177,7 +128,7 @@
                         {% endfor %}
                     </ul>
                 </div>
-                <form class="buy-form" method="POST" action="{{ url_for('create_payment') }}">
+                <form method="POST" action="{{ url_for('create_payment') }}">
                     <input type="hidden" name="plan_id" value="{{ plan.id }}" />
                     <button type="submit" class="buy-btn">خرید</button>
                 </form>
@@ -188,19 +139,29 @@
         <section>
             <h2>تولید صدا از متن</h2>
             <textarea id="text-input" rows="4" style="width:100%; border-radius: 10px; padding: 10px; background-color: #222; color: #eee; border: none;" placeholder="متن خود را وارد کنید..."></textarea>
+
             <select id="voice-select" style="margin-top: 10px; padding: 8px; border-radius: 10px; background-color: #222; color: #eee; border: none; width: 100%;">
                 {% for lang, voice in languages.items() %}
                 <option value="{{ voice }}">{{ lang }}</option>
                 {% endfor %}
             </select>
+
+            <!-- انتخاب حالت احساسی -->
+            <select id="style-select" style="margin-top: 10px; padding: 8px; border-radius: 10px; background-color: #222; color: #eee; border: none; width: 100%;">
+                <option value="">حالت صدا: خودکار</option>
+                <option value="cheerful">😊 شاد</option>
+                <option value="sad">😞 غمگین</option>
+                <option value="angry">😠 عصبانی</option>
+                <option value="excited">🤩 هیجان‌زده</option>
+                <option value="friendly">🤗 دوستانه</option>
+                <option value="hopeful">🌈 امیدوار</option>
+            </select>
+
             <button id="generate-btn" style="margin-top: 15px; background-color: #2196f3; color: white; border: none; padding: 12px; border-radius: 40px; font-weight: bold; width: 100%; cursor: pointer;">تولید صدا</button>
 
-            <audio id="audio-player" controls style="display:none; margin-top:15px; width:100%; border-radius: 10px; background-color: #333;"></audio>
-            <button id="download-btn" style="display:none;">دانلود صدا</button>
-
+            <audio id="audio-player" controls></audio>
+            <button id="download-btn">دانلود صدا</button>
             <div id="message"></div>
-
-            <!-- بخش نمایش احساسات -->
             <div id="sentiment-display"></div>
         </section>
     </main>
@@ -211,15 +172,14 @@
         const audioPlayer = document.getElementById('audio-player');
         const textInput = document.getElementById('text-input');
         const voiceSelect = document.getElementById('voice-select');
+        const styleSelect = document.getElementById('style-select');
         const messageDiv = document.getElementById('message');
         const sentimentDisplay = document.getElementById('sentiment-display');
 
         generateBtn.addEventListener('click', () => {
-            messageDiv.textContent = '';
-            sentimentDisplay.textContent = '';
-            sentimentDisplay.className = '';
             const text = textInput.value.trim();
             const voice = voiceSelect.value;
+            const style = styleSelect.value;
 
             if (!text) {
                 messageDiv.textContent = 'لطفا متن را وارد کنید.';
@@ -228,13 +188,16 @@
 
             generateBtn.disabled = true;
             generateBtn.textContent = 'در حال تولید...';
+            messageDiv.textContent = '';
+            sentimentDisplay.textContent = '';
 
             fetch('/tts', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({text, voice})
-            }).then(response => response.json())
-              .then(data => {
+                body: JSON.stringify({ text, voice, style })
+            })
+            .then(response => response.json())
+            .then(data => {
                 generateBtn.disabled = false;
                 generateBtn.textContent = 'تولید صدا';
 
@@ -242,59 +205,48 @@
                     messageDiv.textContent = data.error;
                     audioPlayer.style.display = 'none';
                     downloadBtn.style.display = 'none';
-                    sentimentDisplay.textContent = '';
-                    sentimentDisplay.className = '';
                 } else {
                     audioPlayer.src = data.audio_url;
                     audioPlayer.style.display = 'block';
                     downloadBtn.style.display = 'inline-block';
                     messageDiv.textContent = '';
 
-                    // درخواست تحلیل احساسات
-                    fetch('/sentiment', {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({text})
-                    }).then(res => res.json())
-                      .then(sentimentData => {
-                        if(sentimentData.error) {
-                            sentimentDisplay.textContent = '';
-                            sentimentDisplay.className = '';
-                        } else {
+                    if (!style) {
+                        fetch('/sentiment', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({ text })
+                        })
+                        .then(res => res.json())
+                        .then(sentimentData => {
                             let sentimentText = '';
                             let sentimentClass = '';
-                            let sentimentIcon = '';
+                            let icon = '';
 
                             if (sentimentData.compound >= 0.05) {
                                 sentimentText = 'مثبت';
                                 sentimentClass = 'positive';
-                                sentimentIcon = '😊';
+                                icon = '😊';
                             } else if (sentimentData.compound <= -0.05) {
                                 sentimentText = 'منفی';
                                 sentimentClass = 'negative';
-                                sentimentIcon = '😞';
+                                icon = '😞';
                             } else {
                                 sentimentText = 'خنثی';
                                 sentimentClass = 'neutral';
-                                sentimentIcon = '😐';
+                                icon = '😐';
                             }
 
-                            sentimentDisplay.textContent = sentimentText;
+                            sentimentDisplay.textContent = icon + ' ' + sentimentText;
                             sentimentDisplay.className = sentimentClass;
-                            sentimentDisplay.textContent = sentimentIcon + ' ' + sentimentText;
-                        }
-                      }).catch(() => {
-                        sentimentDisplay.textContent = '';
-                        sentimentDisplay.className = '';
-                      });
+                        });
+                    }
                 }
-              }).catch(() => {
+            }).catch(() => {
                 messageDiv.textContent = 'خطا در ارتباط با سرور.';
                 generateBtn.disabled = false;
                 generateBtn.textContent = 'تولید صدا';
-                sentimentDisplay.textContent = '';
-                sentimentDisplay.className = '';
-              });
+            });
         });
 
         downloadBtn.addEventListener('click', () => {
