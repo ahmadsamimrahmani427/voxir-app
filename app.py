@@ -4,14 +4,16 @@ import edge_tts
 import asyncio
 import os
 import paypalrestsdk
+
+# اضافه شده برای تحلیل احساسات
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
 app = Flask(__name__)
 app.secret_key = "your-secret-key"
 
-# پیکربندی PayPal
+# پیکربندی PayPal در حالت Live با کلیدهای شما
 paypalrestsdk.configure({
-    "mode": "live",
+    "mode": "live",  # حالت لایو
     "client_id": "BAAPhnx7VkJgKOMM9B-Jowx06XDwRhrIeKIewOZBdKWJtkEDalPgw9vj6xw5Xi21YTIChXHr00JATIbVqY",
     "client_secret": "ECQhDhRs-bMYbcVfOkfqIpS8ZizF5S6YPNRXlRdmbc00u7XfdacA0nXOpPuTbOpiG5Fb6DWGrt0lBZ9S"
 })
@@ -100,10 +102,13 @@ def create_payment():
     if plan_id == "free":
         return redirect(url_for("app_main"))
 
-    amount = "3.00"
+    amount = "3.00"  # قیمت پلن حرفه‌ای
+
     payment = paypalrestsdk.Payment({
         "intent": "sale",
-        "payer": {"payment_method": "paypal"},
+        "payer": {
+            "payment_method": "paypal"
+        },
         "redirect_urls": {
             "return_url": url_for('payment_execute', _external=True),
             "cancel_url": url_for('payment_cancel', _external=True)
@@ -118,7 +123,10 @@ def create_payment():
                     "quantity": 1
                 }]
             },
-            "amount": {"total": amount, "currency": "USD"},
+            "amount": {
+                "total": amount,
+                "currency": "USD"
+            },
             "description": "خرید پلن ۳ ماهه حرفه‌ای"
         }]
     })
@@ -136,7 +144,9 @@ def create_payment():
 def payment_execute():
     payment_id = request.args.get('paymentId')
     payer_id = request.args.get('PayerID')
+
     payment = paypalrestsdk.Payment.find(payment_id)
+
     if payment.execute({"payer_id": payer_id}):
         return "پرداخت با موفقیت انجام شد. متشکریم!"
     else:
@@ -147,7 +157,7 @@ def payment_execute():
 def payment_cancel():
     return "پرداخت لغو شد."
 
-# 🔊 تبدیل متن به گفتار همراه با سبک احساسی
+# تابع تولید صدا با edge-tts که مود احساس را در نظر می‌گیرد
 @app.route('/tts', methods=['POST'])
 def tts():
     if not is_logged_in():
@@ -156,27 +166,38 @@ def tts():
     data = request.get_json()
     text = data.get('text', '')
     voice = data.get('voice', 'fa-IR-DilaraNeural')
-    style = data.get('style', 'general')  # "cheerful", "sad", "default"
 
     if not text.strip():
         return {"error": "متن خالی است."}, 400
+
+    # تحلیل احساسات متن
+    scores = analyzer.polarity_scores(text)
+    compound = scores['compound']
+
+    # تعیین مود احساس برای edge-tts
+    if compound >= 0.05:
+        style = "cheerful"
+    elif compound <= -0.05:
+        style = "sad"
+    else:
+        style = "neutral"
 
     output_path = "output.mp3"
     if os.path.exists(output_path):
         os.remove(output_path)
 
     async def synthesize():
+        # استفاده از style برای حالت احساس
         communicate = edge_tts.Communicate(text, voice, style=style)
         await communicate.save(output_path)
 
-    try:
-        asyncio.run(synthesize())
-        return {"audio_url": "/audio/output.mp3"}
-    except Exception as e:
-        return {"error": f"خطا در تولید صدا: {str(e)}"}
+    asyncio.run(synthesize())
+
+    return {"audio_url": "/audio/output.mp3"}
 
 @app.route('/audio/<path:filename>')
 def serve_audio(filename):
+    # فرض شده فایل خروجی در ریشه پروژه ذخیره شده
     return send_file(filename, mimetype='audio/mpeg')
 
 @app.route('/download')
@@ -187,15 +208,20 @@ def download():
         return "فایل یافت نشد", 404
     return send_file("output.mp3", as_attachment=True)
 
-# 🧠 تحلیل احساسات با VADER
+# ------------------ بخش جدید تحلیل احساسات -------------------
 @app.route('/sentiment', methods=['POST'])
 def sentiment():
     data = request.get_json()
     text = data.get('text', '')
+
     if not text.strip():
         return jsonify({"error": "متن خالی است."})
+
     scores = analyzer.polarity_scores(text)
+    # مقدار compound را برمی‌گردانیم که بین -1 تا 1 است
     return jsonify(scores)
+
+# -------------------------------------------------------------
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=3000, debug=True)
