@@ -143,6 +143,7 @@
             gap: 10px;
             color: #fff;
         }
+        /* رنگ‌ها بر اساس حس */
         .positive {
             color: #4caf50;
         }
@@ -199,6 +200,7 @@
 
             <div id="message"></div>
 
+            <!-- بخش نمایش احساسات -->
             <div id="sentiment-display"></div>
         </section>
     </main>
@@ -248,7 +250,7 @@
                     downloadBtn.style.display = 'inline-block';
                     messageDiv.textContent = '';
 
-                    // تحلیل احساسات
+                    // درخواست تحلیل احساسات
                     fetch('/sentiment', {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
