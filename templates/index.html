@@ -141,7 +141,9 @@
             justify-content: center;
             align-items: center;
             gap: 10px;
+            color: #fff;
         }
+        /* رنگ‌ها بر اساس حس */
         .positive {
             color: #4caf50;
         }
@@ -193,10 +195,12 @@
             </select>
             <button id="generate-btn" style="margin-top: 15px; background-color: #2196f3; color: white; border: none; padding: 12px; border-radius: 40px; font-weight: bold; width: 100%; cursor: pointer;">تولید صدا</button>
 
-            <audio id="audio-player" controls></audio>
-            <button id="download-btn">دانلود صدا</button>
+            <audio id="audio-player" controls style="display:none; margin-top:15px; width:100%; border-radius: 10px; background-color: #333;"></audio>
+            <button id="download-btn" style="display:none;">دانلود صدا</button>
 
             <div id="message"></div>
+
+            <!-- بخش نمایش احساسات -->
             <div id="sentiment-display"></div>
         </section>
     </main>
@@ -210,7 +214,7 @@
         const messageDiv = document.getElementById('message');
         const sentimentDisplay = document.getElementById('sentiment-display');
 
-        generateBtn.addEventListener('click', async () => {
+        generateBtn.addEventListener('click', () => {
             messageDiv.textContent = '';
             sentimentDisplay.textContent = '';
             sentimentDisplay.className = '';
@@ -225,58 +229,70 @@
             generateBtn.disabled = true;
             generateBtn.textContent = 'در حال تولید...';
 
-            // تحلیل احساسات قبل از تولید صدا
-            let style = "general";
-            try {
-                const res = await fetch('/sentiment', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ text })
-                });
-                const data = await res.json();
-                let icon = '';
-                if (data.compound >= 0.05) {
-                    style = "cheerful";
-                    sentimentDisplay.className = 'positive';
-                    icon = '😊 مثبت';
-                } else if (data.compound <= -0.05) {
-                    style = "sad";
-                    sentimentDisplay.className = 'negative';
-                    icon = '😞 منفی';
-                } else {
-                    style = "default";
-                    sentimentDisplay.className = 'neutral';
-                    icon = '😐 خنثی';
-                }
-                sentimentDisplay.textContent = icon;
-            } catch (e) {
-                style = "default";
-            }
-
-            // تولید صدا با style مناسب
             fetch('/tts', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ text, voice, style })
+                body: JSON.stringify({text, voice})
             }).then(response => response.json())
               .then(data => {
-                  generateBtn.disabled = false;
-                  generateBtn.textContent = 'تولید صدا';
+                generateBtn.disabled = false;
+                generateBtn.textContent = 'تولید صدا';
 
-                  if (data.error) {
-                      messageDiv.textContent = data.error;
-                      audioPlayer.style.display = 'none';
-                      downloadBtn.style.display = 'none';
-                  } else {
-                      audioPlayer.src = data.audio_url;
-                      audioPlayer.style.display = 'block';
-                      downloadBtn.style.display = 'inline-block';
-                      messageDiv.textContent = '';
-                  }
+                if (data.error) {
+                    messageDiv.textContent = data.error;
+                    audioPlayer.style.display = 'none';
+                    downloadBtn.style.display = 'none';
+                    sentimentDisplay.textContent = '';
+                    sentimentDisplay.className = '';
+                } else {
+                    audioPlayer.src = data.audio_url;
+                    audioPlayer.style.display = 'block';
+                    downloadBtn.style.display = 'inline-block';
+                    messageDiv.textContent = '';
+
+                    // درخواست تحلیل احساسات
+                    fetch('/sentiment', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({text})
+                    }).then(res => res.json())
+                      .then(sentimentData => {
+                        if(sentimentData.error) {
+                            sentimentDisplay.textContent = '';
+                            sentimentDisplay.className = '';
+                        } else {
+                            let sentimentText = '';
+                            let sentimentClass = '';
+                            let sentimentIcon = '';
+
+                            if (sentimentData.compound >= 0.05) {
+                                sentimentText = 'مثبت';
+                                sentimentClass = 'positive';
+                                sentimentIcon = '😊';
+                            } else if (sentimentData.compound <= -0.05) {
+                                sentimentText = 'منفی';
+                                sentimentClass = 'negative';
+                                sentimentIcon = '😞';
+                            } else {
+                                sentimentText = 'خنثی';
+                                sentimentClass = 'neutral';
+                                sentimentIcon = '😐';
+                            }
+
+                            sentimentDisplay.textContent = sentimentIcon + ' ' + sentimentText;
+                            sentimentDisplay.className = sentimentClass;
+                        }
+                      }).catch(() => {
+                        sentimentDisplay.textContent = '';
+                        sentimentDisplay.className = '';
+                      });
+                }
               }).catch(() => {
-                  generateBtn.disabled = false;
-                  generateBtn.textContent = 'تولید صدا';
-                  messageDiv.textContent = 'خطا در سرور.';
+                messageDiv.textContent = 'خطا در ارتباط با سرور.';
+                generateBtn.disabled = false;
+                generateBtn.textContent = 'تولید صدا';
+                sentimentDisplay.textContent = '';
+                sentimentDisplay.className = '';
               });
         });
 
