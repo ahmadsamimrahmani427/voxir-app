@@ -9,15 +9,16 @@ from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 app = Flask(__name__)
 app.secret_key = "your-secret-key"
 
-# پیکربندی PayPal در حالت Live با کلیدهای شما
+# پیکربندی PayPal
 paypalrestsdk.configure({
-    "mode": "live",
-    "client_id": "BAAPhnx7VkJgKOMM9B-Jowx06XDwRhrIeKIewOZBdKWJtkEDalPgw9vj6xw5Xi21YTIChXHr00JATIbVqY",
-    "client_secret": "ECQhDhRs-bMYbcVfOkfqIpS8ZizF5S6YPNRXlRdmbc00u7XfdacA0nXOpPuTbOpiG5Fb6DWGrt0lBZ9S"
+    "mode": "live",  # یا "sandbox" برای تست
+    "client_id": "YOUR_PAYPAL_CLIENT_ID",
+    "client_secret": "YOUR_PAYPAL_CLIENT_SECRET"
 })
 
-GOOGLE_CLIENT_ID = "786899786922-vu682l6h78vlc1ab1gh3jq0ffjlmrugo.apps.googleusercontent.com"
-GOOGLE_CLIENT_SECRET = "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"
+# تنظیمات گوگل اوث
+GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID"
+GOOGLE_CLIENT_SECRET = "YOUR_GOOGLE_CLIENT_SECRET"
 
 google_bp = make_google_blueprint(
     client_id=GOOGLE_CLIENT_ID,
@@ -100,7 +101,7 @@ def create_payment():
     if plan_id == "free":
         return redirect(url_for("app_main"))
 
-    amount = "3.00"
+    amount = "3.00"  # قیمت پلن حرفه‌ای
 
     payment = paypalrestsdk.Payment({
         "intent": "sale",
@@ -158,24 +159,24 @@ def payment_cancel():
 @app.route('/tts', methods=['POST'])
 def tts():
     if not is_logged_in():
-        return jsonify({"error": "لطفا وارد شوید."}), 403
+        return {"error": "لطفا وارد شوید."}, 403
 
     data = request.get_json()
-    text = data.get('text', '').strip()
+    text = data.get('text', '')
     voice = data.get('voice', 'fa-IR-DilaraNeural')
 
-    if not text:
-        return jsonify({"error": "متن خالی است."}), 400
+    if not text.strip():
+        return {"error": "متن خالی است."}, 400
 
+    # تحلیل احساسات و انتخاب مود صدای مناسب
     scores = analyzer.polarity_scores(text)
     compound = scores['compound']
 
+    style = "general"
     if compound >= 0.05:
         style = "cheerful"
     elif compound <= -0.05:
         style = "sad"
-    else:
-        style = "neutral"
 
     output_path = "output.mp3"
     if os.path.exists(output_path):
@@ -188,21 +189,25 @@ def tts():
     try:
         asyncio.run(synthesize())
     except Exception as e:
-        return jsonify({"error": f"خطا در تولید صدا: {str(e)}"}), 500
+        return {"error": f"خطا در تولید صدا: {e}"}, 500
 
-    return jsonify({"audio_url": "/audio/output.mp3"})
+    return {"audio_url": "/audio/output.mp3"}
 
-@app.route('/audio/<filename>')
+@app.route('/audio/<path:filename>')
 def serve_audio(filename):
-    return send_file(filename, mimetype='audio/mpeg')
+    full_path = os.path.join(os.getcwd(), filename)
+    if not os.path.isfile(full_path):
+        return "فایل یافت نشد", 404
+    return send_file(full_path, mimetype='audio/mpeg')
 
 @app.route('/download')
 def download():
     if not is_logged_in():
         return redirect(url_for("login"))
-    if not os.path.exists("output.mp3"):
+    file_path = "output.mp3"
+    if not os.path.exists(file_path):
         return "فایل یافت نشد", 404
-    return send_file("output.mp3", as_attachment=True)
+    return send_file(file_path, as_attachment=True)
 
 @app.route('/sentiment', methods=['POST'])
 def sentiment():
