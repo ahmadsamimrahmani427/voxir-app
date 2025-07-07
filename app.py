@@ -9,9 +9,9 @@ from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 app = Flask(__name__)
 app.secret_key = "your-secret-key"
 
-# پیکربندی PayPal در حالت Live با کلیدهای شما
+# پیکربندی PayPal
 paypalrestsdk.configure({
-    "mode": "live",  # یا "sandbox" اگر برای تست است
+    "mode": "live",  # یا "sandbox" برای تست
     "client_id": "BAAPhnx7VkJgKOMM9B-Jowx06XDwRhrIeKIewOZBdKWJtkEDalPgw9vj6xw5Xi21YTIChXHr00JATIbVqY",
     "client_secret": "ECQhDhRs-bMYbcVfOkfqIpS8ZizF5S6YPNRXlRdmbc00u7XfdacA0nXOpPuTbOpiG5Fb6DWGrt0lBZ9S"
 })
@@ -55,7 +55,7 @@ def login():
         password = request.form.get("password")
         if email and password:
             session["email"] = email
-            session["free_uses"] = 3  # تنظیم تعداد استفاده رایگان در ورود معمولی
+            session["free_uses"] = 3  # 3 استفاده رایگان برای هر کاربر تازه
             return redirect(url_for("app_main"))
 
     if google.authorized:
@@ -107,27 +107,20 @@ def create_payment():
 
     payment = paypalrestsdk.Payment({
         "intent": "sale",
-        "payer": {
-            "payment_method": "paypal"
-        },
+        "payer": {"payment_method": "paypal"},
         "redirect_urls": {
             "return_url": url_for('payment_execute', _external=True),
             "cancel_url": url_for('payment_cancel', _external=True)
         },
         "transactions": [{
-            "item_list": {
-                "items": [{
-                    "name": "پلن ۳ ماهه حرفه‌ای",
-                    "sku": plan_id,
-                    "price": amount,
-                    "currency": "USD",
-                    "quantity": 1
-                }]
-            },
-            "amount": {
-                "total": amount,
-                "currency": "USD"
-            },
+            "item_list": {"items": [{
+                "name": "پلن ۳ ماهه حرفه‌ای",
+                "sku": plan_id,
+                "price": amount,
+                "currency": "USD",
+                "quantity": 1
+            }]},
+            "amount": {"total": amount, "currency": "USD"},
             "description": "خرید پلن ۳ ماهه حرفه‌ای"
         }]
     })
@@ -149,8 +142,7 @@ def payment_execute():
     payment = paypalrestsdk.Payment.find(payment_id)
 
     if payment.execute({"payer_id": payer_id}):
-        # پس از خرید، تعداد استفاده رایگان را نامحدود کنیم (یا هر سیاست دلخواه شما)
-        session["free_uses"] = 9999
+        session["free_uses"] = 9999  # دسترسی نامحدود بعد از خرید
         return "پرداخت با موفقیت انجام شد. متشکریم!"
     else:
         print("خطا در تایید پرداخت:", payment.error)
@@ -165,52 +157,49 @@ def tts():
     if not is_logged_in():
         return {"error": "لطفا وارد شوید."}, 403
 
-    free_uses = session.get("free_uses", 3)
-    if free_uses <= 0:
-        return {"error": "تعداد استفاده رایگان شما به پایان رسیده است. لطفاً پلن خود را ارتقا دهید."}, 403
-
     data = request.get_json()
-    text = data.get('text', '')
+    text = data.get('text', '').strip()
     voice = data.get('voice', 'fa-IR-DilaraNeural')
-    emotion = data.get('emotion', 'neutral')  # حالت احساس از کلاینت (cheerful, sad, neutral)
+    mood = data.get('mood', 'neutral')  # "cheerful" ، "sad" یا "neutral"
 
-    if not text.strip():
+    if not text:
         return {"error": "متن خالی است."}, 400
 
-    # کاهش استفاده رایگان
-    session["free_uses"] = free_uses - 1
-
-    # تعیین style بر اساس احساس
-    style_map = {
-        "cheerful": "cheerful",
-        "sad": "sad",
-        "neutral": "neutral"
-    }
-    style = style_map.get(emotion, "neutral")
+    # چک تعداد استفاده رایگان
+    if session.get("free_uses", 0) <= 0:
+        return {"error": "تعداد استفاده رایگان شما به پایان رسیده است. لطفا پلن حرفه‌ای را خریداری کنید."}, 403
 
     output_path = "output.mp3"
     if os.path.exists(output_path):
         os.remove(output_path)
 
-    async def synthesize():
-        # edge_tts.Communicate ساختار جدید بدون پارامتر style مستقیم
-        # برای اعمال style باید متن را SSML دهیم
-        # قالب SSML با حالت احساس:
-        ssml_text = f"""
-        <speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="en-US">
-          <voice name="{voice}">
-            <mstts:express-as style="{style}" xmlns:mstts="http://www.w3.org/2001/mstts">{text}</mstts:express-as>
-          </voice>
-        </speak>
-        """
-        communicate = edge_tts.Communicate(ssml_text, voice, input_format="ssml")
-        await communicate.save(output_path)
+    voices_with_style = {
+        "en-US-AriaNeural",
+        "de-DE-KatjaNeural",
+        "fr-FR-DeniseNeural",
+        "es-ES-ElviraNeural"
+    }
+
+    style = None
+    if mood != "neutral" and voice in voices_with_style:
+        style = mood
 
     try:
+        async def synthesize():
+            if style:
+                communicate = edge_tts.Communicate(text, voice, style=style)
+            else:
+                communicate = edge_tts.Communicate(text, voice)
+            await communicate.save(output_path)
+
         asyncio.run(synthesize())
     except Exception as e:
-        print("Error generating sound:", e)
+        print(f"❌ Error generating sound: {e}")
         return {"error": "خطا در تولید صدا."}, 500
+
+    # کم کردن تعداد استفاده رایگان
+    if session.get("free_uses", 0) > 0 and session.get("free_uses", 0) < 9999:
+        session["free_uses"] -= 1
 
     return {"audio_url": "/audio/output.mp3"}
 
@@ -231,9 +220,9 @@ def download():
 @app.route('/sentiment', methods=['POST'])
 def sentiment():
     data = request.get_json()
-    text = data.get('text', '')
+    text = data.get('text', '').strip()
 
-    if not text.strip():
+    if not text:
         return jsonify({"error": "متن خالی است."})
 
     scores = analyzer.polarity_scores(text)
