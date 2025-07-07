@@ -1,14 +1,21 @@
-from flask import Flask, render_template, redirect, url_for, request, session, send_file, flash
+from flask import Flask, render_template, redirect, url_for, request, session, send_file
 from flask_dance.contrib.google import make_google_blueprint, google
 import edge_tts
 import asyncio
 import os
-import paypalrestsdk
+import paypalrestsdk  # ← تنظیم PayPal
 
 app = Flask(__name__)
 app.secret_key = "your-secret-key"
 
-# تنظیم کلاینت‌های گوگل
+# ✅ تنظیم PayPal در حالت Live با استفاده از متغیرهای محیطی
+paypalrestsdk.configure({
+    "mode": "live",  # حالت واقعی (نه sandbox)
+    "client_id": os.getenv("PAYPAL_CLIENT_ID"),
+    "client_secret": os.getenv("PAYPAL_CLIENT_SECRET")
+})
+
+# Google OAuth
 GOOGLE_CLIENT_ID = "786899786922-vu682l6h78vlc1ab1gh3jq0ffjlmrugo.apps.googleusercontent.com"
 GOOGLE_CLIENT_SECRET = "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"
 
@@ -19,13 +26,6 @@ google_bp = make_google_blueprint(
     redirect_url="/login/google/authorized"
 )
 app.register_blueprint(google_bp, url_prefix="/login")
-
-# پیکربندی PayPal (Live)
-paypalrestsdk.configure({
-    "mode": "live",  # تغییر به live برای پرداخت واقعی
-    "client_id": "YOUR_LIVE_CLIENT_ID_HERE",
-    "client_secret": "YOUR_LIVE_CLIENT_SECRET_HERE"
-})
 
 LANGUAGES = {
     "فارسی": "fa-IR-DilaraNeural",
@@ -73,7 +73,7 @@ def app_main():
     if not is_logged_in():
         return redirect(url_for("login"))
     email = session.get("email", "کاربر")
-    free_uses = 3  # تعداد تست رایگان
+    free_uses = 1
     plans = [
         {"name": "پلن رایگان", "price": "رایگان", "features": ["۳ استفاده رایگان"], "id": "free"},
         {"name": "پلن ۳ ماهه حرفه‌ای", "price": "۳ دلار", "features": ["استفاده نامحدود", "پشتیبانی ویژه"], "id": "pro"},
@@ -98,7 +98,7 @@ def create_payment():
     if plan_id == "free":
         return redirect(url_for("app_main"))
 
-    amount = "3.00"  # قیمت پلن ۳ ماهه حرفه‌ای
+    amount = "3.00"  # قیمت پلن حرفه‌ای
 
     payment = paypalrestsdk.Payment({
         "intent": "sale",
@@ -133,6 +133,7 @@ def create_payment():
                 return redirect(link.href)
         return "خطا در دریافت لینک پرداخت", 500
     else:
+        print("خطا در ساخت پرداخت:", payment.error)
         return f"خطا در ساخت پرداخت: {payment.error}", 500
 
 @app.route('/payment/execute')
@@ -143,13 +144,14 @@ def payment_execute():
     payment = paypalrestsdk.Payment.find(payment_id)
 
     if payment.execute({"payer_id": payer_id}):
-        return "پرداخت با موفقیت انجام شد. متشکریم!"
+        return "✅ پرداخت با موفقیت انجام شد. از خرید شما متشکریم!"
     else:
-        return f"خطا در تایید پرداخت: {payment.error}", 400
+        print("خطا در تایید پرداخت:", payment.error)
+        return f"❌ خطا در تایید پرداخت: {payment.error}", 400
 
 @app.route('/payment/cancel')
 def payment_cancel():
-    return "پرداخت لغو شد."
+    return "⛔️ پرداخت لغو شد."
 
 @app.route('/tts', methods=['POST'])
 def tts():
