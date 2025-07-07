@@ -31,18 +31,7 @@ LANGUAGES = {
     "انگلیسی": "en-US-AriaNeural",
     "آلمانی": "de-DE-KatjaNeural",
     "فرانسوی": "fr-FR-DeniseNeural",
-    "اسپانیایی": "es-ES-ElviraNeural",
-    "ترکی": "tr-TR-EmelNeural",
-    "چینی": "zh-CN-XiaoxiaoNeural",
-    "ژاپنی": "ja-JP-NanamiNeural",
-    "روسی": "ru-RU-DariyaNeural",
-    "پرتغالی": "pt-PT-FernandaNeural"
-}
-
-STYLE_SUPPORTED_LANGUAGES = {
-    "en-US-AriaNeural", "de-DE-KatjaNeural", "fr-FR-DeniseNeural",
-    "es-ES-ElviraNeural", "tr-TR-EmelNeural", "zh-CN-XiaoxiaoNeural",
-    "ja-JP-NanamiNeural", "ru-RU-DariyaNeural", "pt-PT-FernandaNeural"
+    "اسپانیایی": "es-ES-ElviraNeural"
 }
 
 analyzer = SentimentIntensityAnalyzer()
@@ -90,7 +79,13 @@ def app_main():
         {"name": "پلن رایگان", "price": "رایگان", "features": ["۳ استفاده رایگان"], "id": "free"},
         {"name": "پلن ۳ ماهه حرفه‌ای", "price": "۳ دلار", "features": ["استفاده نامحدود", "پشتیبانی ویژه"], "id": "pro"},
     ]
-    return render_template("index.html", email=email, languages=LANGUAGES, free_uses=free_uses, plans=plans)
+    return render_template(
+        "index.html",
+        email=email,
+        languages=LANGUAGES,
+        free_uses=free_uses,
+        plans=plans
+    )
 
 @app.route('/create_payment', methods=['POST'])
 def create_payment():
@@ -166,36 +161,37 @@ def tts():
 
     data = request.get_json()
     text = data.get('text', '')
-    voice = data.get('voice', '')
-    style = data.get('style', '').strip().lower()  # user selected style or empty
+    voice = data.get('voice', 'fa-IR-DilaraNeural')
 
     if not text.strip():
         return {"error": "متن خالی است."}, 400
 
-    if os.path.exists("output.mp3"):
-        os.remove("output.mp3")
+    output_path = "output.mp3"
+    if os.path.exists(output_path):
+        os.remove(output_path)
 
-    # اگر سبک توسط کاربر انتخاب نشده بود، آن را بر اساس احساسات تشخیص بده
-    if not style and voice in STYLE_SUPPORTED_LANGUAGES:
-        score = analyzer.polarity_scores(text)
-        if score['compound'] >= 0.05:
-            style = "cheerful"
-        elif score['compound'] <= -0.05:
-            style = "sad"
-        else:
-            style = "general"
+    # تحلیل احساسات برای تعیین آیکن (ولی مود صدای خاص نمی‌دهیم چون edge-tts نسخه قدیمی)
+    scores = analyzer.polarity_scores(text)
+    compound = scores.get('compound', 0)
+    if compound >= 0.05:
+        sentiment_icon = '😊'
+    elif compound <= -0.05:
+        sentiment_icon = '😞'
+    else:
+        sentiment_icon = '😐'
 
     async def synthesize():
-        communicate = edge_tts.Communicate(text=text, voice=voice, style=style if voice in STYLE_SUPPORTED_LANGUAGES else None)
-        await communicate.save("output.mp3")
+        communicate = edge_tts.Communicate(text, voice)  # بدون style
+        await communicate.save(output_path)
 
     try:
         asyncio.run(synthesize())
     except Exception as e:
         print("❌ Error generating sound:", e)
-        return {"error": "خطا در تولید صدا"}, 500
+        return {"error": "خطا در تولید صدا."}, 500
 
-    return {"audio_url": "/audio/output.mp3"}
+    # می‌تونیم آیکن احساسات رو هم برگردونیم اگر خواستی از جاوااسکریپت نمایش بدی
+    return {"audio_url": "/audio/output.mp3", "sentiment_icon": sentiment_icon}
 
 @app.route('/audio/<path:filename>')
 def serve_audio(filename):
@@ -213,8 +209,10 @@ def download():
 def sentiment():
     data = request.get_json()
     text = data.get('text', '')
+
     if not text.strip():
         return jsonify({"error": "متن خالی است."})
+
     scores = analyzer.polarity_scores(text)
     return jsonify(scores)
 
