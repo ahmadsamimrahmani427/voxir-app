@@ -132,6 +132,27 @@
             font-weight: bold;
             text-align: center;
         }
+        #sentiment-display {
+            margin-top: 15px;
+            font-weight: bold;
+            font-size: 1.2em;
+            text-align: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            color: #fff;
+        }
+        /* رنگ‌ها بر اساس حس */
+        .positive {
+            color: #4caf50;
+        }
+        .neutral {
+            color: #ffc107;
+        }
+        .negative {
+            color: #f44336;
+        }
     </style>
 </head>
 <body>
@@ -178,6 +199,9 @@
             <button id="download-btn" style="display:none;">دانلود صدا</button>
 
             <div id="message"></div>
+
+            <!-- بخش نمایش احساسات -->
+            <div id="sentiment-display"></div>
         </section>
     </main>
 
@@ -188,9 +212,12 @@
         const textInput = document.getElementById('text-input');
         const voiceSelect = document.getElementById('voice-select');
         const messageDiv = document.getElementById('message');
+        const sentimentDisplay = document.getElementById('sentiment-display');
 
         generateBtn.addEventListener('click', () => {
             messageDiv.textContent = '';
+            sentimentDisplay.textContent = '';
+            sentimentDisplay.className = '';
             const text = textInput.value.trim();
             const voice = voiceSelect.value;
 
@@ -215,16 +242,58 @@
                     messageDiv.textContent = data.error;
                     audioPlayer.style.display = 'none';
                     downloadBtn.style.display = 'none';
+                    sentimentDisplay.textContent = '';
+                    sentimentDisplay.className = '';
                 } else {
                     audioPlayer.src = data.audio_url;
                     audioPlayer.style.display = 'block';
                     downloadBtn.style.display = 'inline-block';
                     messageDiv.textContent = '';
+
+                    // درخواست تحلیل احساسات
+                    fetch('/sentiment', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({text})
+                    }).then(res => res.json())
+                      .then(sentimentData => {
+                        if(sentimentData.error) {
+                            sentimentDisplay.textContent = '';
+                            sentimentDisplay.className = '';
+                        } else {
+                            let sentimentText = '';
+                            let sentimentClass = '';
+                            let sentimentIcon = '';
+
+                            if (sentimentData.compound >= 0.05) {
+                                sentimentText = 'مثبت';
+                                sentimentClass = 'positive';
+                                sentimentIcon = '😊';
+                            } else if (sentimentData.compound <= -0.05) {
+                                sentimentText = 'منفی';
+                                sentimentClass = 'negative';
+                                sentimentIcon = '😞';
+                            } else {
+                                sentimentText = 'خنثی';
+                                sentimentClass = 'neutral';
+                                sentimentIcon = '😐';
+                            }
+
+                            sentimentDisplay.textContent = sentimentText;
+                            sentimentDisplay.className = sentimentClass;
+                            sentimentDisplay.textContent = sentimentIcon + ' ' + sentimentText;
+                        }
+                      }).catch(() => {
+                        sentimentDisplay.textContent = '';
+                        sentimentDisplay.className = '';
+                      });
                 }
               }).catch(() => {
                 messageDiv.textContent = 'خطا در ارتباط با سرور.';
                 generateBtn.disabled = false;
                 generateBtn.textContent = 'تولید صدا';
+                sentimentDisplay.textContent = '';
+                sentimentDisplay.className = '';
               });
         });
 
