@@ -3,10 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Voxir - داشبورد</title>
-<link rel="icon" href="/static/mic-icon.png" type="image/png" />
-<link rel="manifest" href="/static/manifest.json">
-<meta name="theme-color" content="#121212">
+<title>داشبورد - {{ email }}</title>
 <style>
     body {
         margin: 0; padding: 20px;
@@ -21,17 +18,9 @@
         align-items: center;
         margin-bottom: 25px;
     }
-    .app-logo {
-        display: flex;
-        align-items: center;
-        font-size: 1.4rem;
-        font-weight: bold;
-        color: #00e5ff;
-    }
-    .app-logo img {
-        width: 32px;
-        height: 32px;
-        margin-left: 10px;
+    .user-info {
+        font-size: 1.2rem;
+        font-weight: 600;
     }
     .logout-btn {
         background-color: #f44336;
@@ -114,83 +103,109 @@
         max-width: 700px;
         margin: 0 auto 50px auto;
     }
-    textarea, select {
+    textarea {
         width: 100%;
         border-radius: 10px;
         padding: 12px;
         background-color: #121212;
         color: #eee;
         border: 1px solid #444;
+        resize: vertical;
         font-size: 1rem;
-        font-family: inherit;
+        font-family: Tahoma, Arial, sans-serif;
     }
-    #generate-btn, #download-btn {
-        margin-top: 20px;
+    select {
         width: 100%;
+        margin-top: 15px;
+        padding: 10px;
+        border-radius: 10px;
+        background-color: #121212;
+        color: #eee;
+        border: 1px solid #444;
+        font-size: 1rem;
+        font-family: Tahoma, Arial, sans-serif;
+        cursor: pointer;
+    }
+    button#generate-btn {
+        margin-top: 25px;
+        background-color: #2196f3;
+        color: white;
         border: none;
         padding: 14px;
-        font-size: 1rem;
-        font-weight: bold;
         border-radius: 40px;
+        font-weight: bold;
+        font-size: 1.1rem;
+        width: 100%;
         cursor: pointer;
         transition: background-color 0.3s ease;
     }
-    #generate-btn {
-        background-color: #2196f3;
-        color: white;
-    }
-    #generate-btn:hover:enabled {
+    button#generate-btn:hover:enabled {
         background-color: #1976d2;
     }
-    #generate-btn:disabled {
+    button#generate-btn:disabled {
         background-color: #555;
         cursor: not-allowed;
     }
-    #download-btn {
-        background-color: #4caf50;
-        color: white;
-        display: none;
-    }
-    #download-btn:hover {
-        background-color: #388e3c;
-    }
     audio#audio-player {
-        margin-top: 15px;
+        margin-top: 20px;
         width: 100%;
         border-radius: 10px;
         background-color: #333;
+        outline: none;
     }
-    #message, #sentiment-display {
+    button#download-btn {
+        margin-top: 12px;
+        padding: 10px 20px;
+        font-size: 1rem;
+        border-radius: 30px;
+        border: none;
+        background-color: #4caf50;
+        color: white;
+        cursor: pointer;
+        display: none;
+        transition: background-color 0.3s ease;
+    }
+    button#download-btn:hover {
+        background-color: #388e3c;
+    }
+    #message {
+        margin-top: 15px;
+        font-weight: 600;
+        color: #ff6f00;
+        min-height: 22px;
+    }
+    #sentiment-display {
         margin-top: 12px;
         font-weight: bold;
-        font-size: 1rem;
-        min-height: 20px;
+        font-size: 1.1rem;
+        min-height: 22px;
+        user-select: none;
     }
-    .positive { color: #4caf50; }
-    .neutral  { color: #ffc107; }
-    .negative { color: #f44336; }
+    /* رنگ‌ها بر اساس احساس */
+    .positive {
+        color: #4caf50;
+    }
+    .neutral {
+        color: #ffc107;
+    }
+    .negative {
+        color: #f44336;
+    }
     @media (max-width: 600px) {
         .plans-container {
             flex-direction: column;
         }
         .plan-card {
+            flex: none;
             min-width: auto;
-        }
-        header {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 10px;
         }
     }
 </style>
 </head>
 <body>
 <header>
-    <div class="app-logo">
-        <img src="/static/mic-icon.png" alt="logo" />
-        Voxir
-    </div>
-    <form action="{{ url_for('logout') }}" method="get">
+    <div class="user-info">سلام، {{ email }}!</div>
+    <form action="{{ url_for('logout') }}" method="get" style="margin:0;">
         <button class="logout-btn" type="submit">خروج</button>
     </form>
 </header>
@@ -220,27 +235,126 @@
 
     <section>
         <h2>تولید صدا از متن</h2>
-        <textarea id="text-input" rows="4" placeholder="متن خود را وارد کنید..."></textarea>
-        <select id="voice-select">
+        <textarea id="text-input" rows="5" placeholder="متن خود را وارد کنید..."></textarea>
+
+        <select id="voice-select" title="انتخاب زبان و صدا">
             {% for lang, voice in languages.items() %}
             <option value="{{ voice }}">{{ lang }}</option>
             {% endfor %}
         </select>
-        <select id="mood-select">
-            <option value="neutral">مود: طبیعی</option>
+
+        <select id="mood-select" title="انتخاب مود احساس">
+            <option value="neutral" selected>مود: طبیعی</option>
             <option value="cheerful">شاد</option>
             <option value="sad">غمگین</option>
         </select>
+
         <button id="generate-btn">تولید صدا</button>
+
         <audio id="audio-player" controls style="display:none;"></audio>
         <button id="download-btn">دانلود صدا</button>
+
         <div id="message"></div>
         <div id="sentiment-display"></div>
     </section>
 </main>
 
 <script>
-    // همان اسکریپت قبلی شما بدون تغییر
+    const generateBtn = document.getElementById('generate-btn');
+    const downloadBtn = document.getElementById('download-btn');
+    const audioPlayer = document.getElementById('audio-player');
+    const textInput = document.getElementById('text-input');
+    const voiceSelect = document.getElementById('voice-select');
+    const moodSelect = document.getElementById('mood-select');
+    const messageDiv = document.getElementById('message');
+    const sentimentDisplay = document.getElementById('sentiment-display');
+
+    generateBtn.addEventListener('click', () => {
+        messageDiv.textContent = '';
+        sentimentDisplay.textContent = '';
+        sentimentDisplay.className = '';
+
+        const text = textInput.value.trim();
+        const voice = voiceSelect.value;
+        const mood = moodSelect.value;
+
+        if (!text) {
+            messageDiv.textContent = 'لطفا متن را وارد کنید.';
+            return;
+        }
+
+        generateBtn.disabled = true;
+        generateBtn.textContent = 'در حال تولید...';
+
+        fetch('/tts', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({text, voice, mood})
+        }).then(response => response.json())
+          .then(data => {
+            generateBtn.disabled = false;
+            generateBtn.textContent = 'تولید صدا';
+
+            if (data.error) {
+                messageDiv.textContent = data.error;
+                audioPlayer.style.display = 'none';
+                downloadBtn.style.display = 'none';
+                sentimentDisplay.textContent = '';
+                sentimentDisplay.className = '';
+            } else {
+                audioPlayer.src = data.audio_url;
+                audioPlayer.style.display = 'block';
+                downloadBtn.style.display = 'inline-block';
+                messageDiv.textContent = '';
+
+                fetch('/sentiment', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({text})
+                }).then(res => res.json())
+                  .then(sentimentData => {
+                    if(sentimentData.error) {
+                        sentimentDisplay.textContent = '';
+                        sentimentDisplay.className = '';
+                    } else {
+                        let sentimentText = '';
+                        let sentimentClass = '';
+                        let sentimentIcon = '';
+
+                        if (sentimentData.compound >= 0.05) {
+                            sentimentText = 'مثبت';
+                            sentimentClass = 'positive';
+                            sentimentIcon = '😊';
+                        } else if (sentimentData.compound <= -0.05) {
+                            sentimentText = 'منفی';
+                            sentimentClass = 'negative';
+                            sentimentIcon = '😞';
+                        } else {
+                            sentimentText = 'خنثی';
+                            sentimentClass = 'neutral';
+                            sentimentIcon = '😐';
+                        }
+
+                        sentimentDisplay.textContent = sentimentIcon + ' ' + sentimentText;
+                        sentimentDisplay.className = sentimentClass;
+                    }
+                  }).catch(() => {
+                    sentimentDisplay.textContent = '';
+                    sentimentDisplay.className = '';
+                  });
+            }
+          }).catch(() => {
+            messageDiv.textContent = 'خطا در ارتباط با سرور.';
+            generateBtn.disabled = false;
+            generateBtn.textContent = 'تولید صدا';
+            sentimentDisplay.textContent = '';
+            sentimentDisplay.className = '';
+          });
+    });
+
+    downloadBtn.addEventListener('click', () => {
+        window.location.href = '/download';
+    });
 </script>
 </body>
 </html>
