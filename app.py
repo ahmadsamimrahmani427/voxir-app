@@ -4,16 +4,13 @@ import edge_tts
 import asyncio
 import os
 import paypalrestsdk
-
-# اضافه شده برای تحلیل احساسات
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
 app = Flask(__name__)
 app.secret_key = "your-secret-key"
 
-# پیکربندی PayPal در حالت Live با کلیدهای شما
 paypalrestsdk.configure({
-    "mode": "live",  # حالت لایو
+    "mode": "live",
     "client_id": "BAAPhnx7VkJgKOMM9B-Jowx06XDwRhrIeKIewOZBdKWJtkEDalPgw9vj6xw5Xi21YTIChXHr00JATIbVqY",
     "client_secret": "ECQhDhRs-bMYbcVfOkfqIpS8ZizF5S6YPNRXlRdmbc00u7XfdacA0nXOpPuTbOpiG5Fb6DWGrt0lBZ9S"
 })
@@ -34,7 +31,18 @@ LANGUAGES = {
     "انگلیسی": "en-US-AriaNeural",
     "آلمانی": "de-DE-KatjaNeural",
     "فرانسوی": "fr-FR-DeniseNeural",
-    "اسپانیایی": "es-ES-ElviraNeural"
+    "اسپانیایی": "es-ES-ElviraNeural",
+    "ترکی": "tr-TR-EmelNeural",
+    "چینی": "zh-CN-XiaoxiaoNeural",
+    "ژاپنی": "ja-JP-NanamiNeural",
+    "روسی": "ru-RU-DariyaNeural",
+    "پرتغالی": "pt-PT-FernandaNeural"
+}
+
+STYLE_SUPPORTED_LANGUAGES = {
+    "en-US-AriaNeural", "de-DE-KatjaNeural", "fr-FR-DeniseNeural",
+    "es-ES-ElviraNeural", "tr-TR-EmelNeural", "zh-CN-XiaoxiaoNeural",
+    "ja-JP-NanamiNeural", "ru-RU-DariyaNeural", "pt-PT-FernandaNeural"
 }
 
 analyzer = SentimentIntensityAnalyzer()
@@ -82,13 +90,7 @@ def app_main():
         {"name": "پلن رایگان", "price": "رایگان", "features": ["۳ استفاده رایگان"], "id": "free"},
         {"name": "پلن ۳ ماهه حرفه‌ای", "price": "۳ دلار", "features": ["استفاده نامحدود", "پشتیبانی ویژه"], "id": "pro"},
     ]
-    return render_template(
-        "index.html",
-        email=email,
-        languages=LANGUAGES,
-        free_uses=free_uses,
-        plans=plans
-    )
+    return render_template("index.html", email=email, languages=LANGUAGES, free_uses=free_uses, plans=plans)
 
 @app.route('/create_payment', methods=['POST'])
 def create_payment():
@@ -102,7 +104,7 @@ def create_payment():
     if plan_id == "free":
         return redirect(url_for("app_main"))
 
-    amount = "3.00"  # قیمت پلن حرفه‌ای
+    amount = "3.00"
 
     payment = paypalrestsdk.Payment({
         "intent": "sale",
@@ -164,20 +166,35 @@ def tts():
 
     data = request.get_json()
     text = data.get('text', '')
-    voice = data.get('voice', 'fa-IR-DilaraNeural')
+    voice = data.get('voice', '')
+    style = data.get('style', '').strip().lower()  # user selected style or empty
 
     if not text.strip():
         return {"error": "متن خالی است."}, 400
 
-    output_path = "output.mp3"
-    if os.path.exists(output_path):
-        os.remove(output_path)
+    if os.path.exists("output.mp3"):
+        os.remove("output.mp3")
+
+    # اگر سبک توسط کاربر انتخاب نشده بود، آن را بر اساس احساسات تشخیص بده
+    if not style and voice in STYLE_SUPPORTED_LANGUAGES:
+        score = analyzer.polarity_scores(text)
+        if score['compound'] >= 0.05:
+            style = "cheerful"
+        elif score['compound'] <= -0.05:
+            style = "sad"
+        else:
+            style = "general"
 
     async def synthesize():
-        communicate = edge_tts.Communicate(text, voice)
-        await communicate.save(output_path)
+        communicate = edge_tts.Communicate(text=text, voice=voice, style=style if voice in STYLE_SUPPORTED_LANGUAGES else None)
+        await communicate.save("output.mp3")
 
-    asyncio.run(synthesize())
+    try:
+        asyncio.run(synthesize())
+    except Exception as e:
+        print("❌ Error generating sound:", e)
+        return {"error": "خطا در تولید صدا"}, 500
+
     return {"audio_url": "/audio/output.mp3"}
 
 @app.route('/audio/<path:filename>')
@@ -192,20 +209,14 @@ def download():
         return "فایل یافت نشد", 404
     return send_file("output.mp3", as_attachment=True)
 
-# ------------------ بخش جدید تحلیل احساسات -------------------
 @app.route('/sentiment', methods=['POST'])
 def sentiment():
     data = request.get_json()
     text = data.get('text', '')
-
     if not text.strip():
         return jsonify({"error": "متن خالی است."})
-
     scores = analyzer.polarity_scores(text)
-    # مقدار compound را برمی‌گردانیم که بین -1 تا 1 است
     return jsonify(scores)
-
-# -------------------------------------------------------------
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=3000, debug=True)
