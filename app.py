@@ -9,15 +9,15 @@ from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 app = Flask(__name__)
 app.secret_key = "your-secret-key"
 
-# پیکربندی PayPal
+# پیکربندی PayPal در حالت Live با کلیدهای شما
 paypalrestsdk.configure({
     "mode": "live",
-    "client_id": "YOUR_PAYPAL_CLIENT_ID",
-    "client_secret": "YOUR_PAYPAL_CLIENT_SECRET"
+    "client_id": "BAAPhnx7VkJgKOMM9B-Jowx06XDwRhrIeKIewOZBdKWJtkEDalPgw9vj6xw5Xi21YTIChXHr00JATIbVqY",
+    "client_secret": "ECQhDhRs-bMYbcVfOkfqIpS8ZizF5S6YPNRXlRdmbc00u7XfdacA0nXOpPuTbOpiG5Fb6DWGrt0lBZ9S"
 })
 
-GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID"
-GOOGLE_CLIENT_SECRET = "YOUR_GOOGLE_CLIENT_SECRET"
+GOOGLE_CLIENT_ID = "786899786922-vu682l6h78vlc1ab1gh3jq0ffjlmrugo.apps.googleusercontent.com"
+GOOGLE_CLIENT_SECRET = "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"
 
 google_bp = make_google_blueprint(
     client_id=GOOGLE_CLIENT_ID,
@@ -104,7 +104,9 @@ def create_payment():
 
     payment = paypalrestsdk.Payment({
         "intent": "sale",
-        "payer": {"payment_method": "paypal"},
+        "payer": {
+            "payment_method": "paypal"
+        },
         "redirect_urls": {
             "return_url": url_for('payment_execute', _external=True),
             "cancel_url": url_for('payment_cancel', _external=True)
@@ -119,7 +121,10 @@ def create_payment():
                     "quantity": 1
                 }]
             },
-            "amount": {"total": amount, "currency": "USD"},
+            "amount": {
+                "total": amount,
+                "currency": "USD"
+            },
             "description": "خرید پلن ۳ ماهه حرفه‌ای"
         }]
     })
@@ -153,20 +158,18 @@ def payment_cancel():
 @app.route('/tts', methods=['POST'])
 def tts():
     if not is_logged_in():
-        return {"error": "لطفا وارد شوید."}, 403
+        return jsonify({"error": "لطفا وارد شوید."}), 403
 
     data = request.get_json()
-    text = data.get('text', '')
+    text = data.get('text', '').strip()
     voice = data.get('voice', 'fa-IR-DilaraNeural')
 
-    if not text.strip():
-        return {"error": "متن خالی است."}, 400
+    if not text:
+        return jsonify({"error": "متن خالی است."}), 400
 
-    # تحلیل احساسات متن
     scores = analyzer.polarity_scores(text)
     compound = scores['compound']
 
-    # انتخاب مود صدا
     if compound >= 0.05:
         style = "cheerful"
     elif compound <= -0.05:
@@ -182,10 +185,14 @@ def tts():
         communicate = edge_tts.Communicate(text, voice, style=style)
         await communicate.save(output_path)
 
-    asyncio.run(synthesize())
-    return {"audio_url": "/audio/output.mp3"}
+    try:
+        asyncio.run(synthesize())
+    except Exception as e:
+        return jsonify({"error": f"خطا در تولید صدا: {str(e)}"}), 500
 
-@app.route('/audio/<path:filename>')
+    return jsonify({"audio_url": "/audio/output.mp3"})
+
+@app.route('/audio/<filename>')
 def serve_audio(filename):
     return send_file(filename, mimetype='audio/mpeg')
 
